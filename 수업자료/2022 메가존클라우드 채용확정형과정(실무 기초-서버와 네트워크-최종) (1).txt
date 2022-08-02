@@ -1,0 +1,495 @@
+--- CentOS7 리눅스 서버 (AWS EC2 - Amazon Linux 2 Image)
+1. SSHD(Secure Shell Daemon; KeyPair 생성 및 활용) - AWS KeyPair
+키 쌍은 특정 인증 프로토콜에 사용되는 공개(Public) 키(자물쇠-서버) 및 프라이빗(Private; *.pem) 키(열쇠-개인 폴더) 파일을 나타냅니다.
+SSH 공개 키 인증은 비동기 암호화 알고리즘을 사용하여 "프라이빗" 키와 "공개" 키라는 두 가지 키 파일을 생성합니다. 프라이빗 키 파일은 암호와 동일하며, 모든 상황에서 보호되어야 합니다. 다른 사람이 사용자의 프라이빗 키를 획득하면 사용자가 액세스할 수 있는 모든 SSH 서버에 사용자의 이름으로 로그인할 수 있습니다.
+# vi /etc/sysconfig/network-scripts/ifcfg-ens33
+onboot=no -> yes 변경
+
+# systemctl restart network
+
+C:\Windows\system32> ssh root@192.168.0.85
+# mkdir /root/.ssh
+C:\Windows\system32> ssh-keygen -t rsa
+C:\Windows\system32> cd %UserProfile%\.ssh
+C:\Users\HanGi Lee\.ssh> scp id_rsa.pub root@192.168.0.85:/root/.ssh/authorized_keys
+C:\Users\HanGi Lee\.ssh> scp -i my-key.pem hello.txt root@192.168.0.85:/root/
+C:\Users\HanGi Lee\.ssh> scp -i my-key.pem root@192.168.0.85:/root/hello.txt ./
+C:\Users\HanGi Lee\.ssh> scp -i my-key.pem -r test-folder root@192.168.0.85:/root/
+C:\Users\HanGi Lee\.ssh> ssh -i my-key.pem root@192.168.0.85
+# vi /etc/ssh/sshd_config
+PasswordAuthentication no
+# systemctl restart sshd
+well-known 알려진 포트번호 : 0 ~ 1023 (서버 포트) - 21(FTP), 22(SSH), 23(TELNET), 25(SMTP), 53(DNS), 67(DHCP) 80(HTTP), 443(HTTPS), 
+unknown 알려지지 않은 포트 : 1024 ~ 65535 (클라이언트 포트) - 3306(MYSQL), 3389(RDP)
+
+http://netdoctor.co.kr
+
+# firewall-cmd --permanent --add-port=2222/tcp
+# firewall-cmd --reload
+# firewall-cmd --list-all
+
+2. HTTPD(Hyper Text Transfer Protocol Daemon; 웹서버 구축 및 간단 홈페이지 꾸미기) - AWS Linux (apache, nginx), WIN (IIS:Internet Information Services)
+HTTP는 HTML 문서와 같은 리소스들을 가져올 수 있도록 해주는 프로토콜입니다. HTTP는 웹에서 이루어지는 모든 데이터 교환의 기초이며, 클라이언트-서버 프로토콜이기도 합니다. 클라이언트-서버 프로토콜이란 (보통 웹브라우저인) 수신자 측에 의해 요청이 초기화되는 프로토콜을 의미합니다. 하나의 완전한 문서는 텍스트, 레이아웃 설명, 이미지, 비디오, 스크립트 등 불러온(fetched) 하위 문서들로 재구성됩니다.
+
+C:\Users\HanGi Lee\.ssh> ssh -i id_rsa root@192.168.56.120
+# sestatus
+# vi /etc/sysconfig/selinux
+SELINUX=disabled
+
+# setenforce 0
+# sestatus
+# yum install -y httpd
+# systemctl start httpd
+# systemctl enable httpd
+# systemctl enable --now httpd
+# systemctl status httpd
+(systemctl start | stop | restart | status | enable | disable | enable --now | disable --now httpd)
+# curl 127.0.0.1
+# systemctl status firewalld
+# firewall-cmd --get-active-zone
+# firewall-cmd --zone=public --list-all
+# firewall-cmd --permanent --add-service=http
+# firewall-cmd --permanent --add-port=80/tcp
+# firewall-cmd --permanent --remove-service=http
+# firewall-cmd --permanent --remove-port=80/tcp
+# firewall-cmd --reload
+# cd /var/www/html
+# mkdir images && cd $_
+# wget http://192.168.1.27/FILES/two-rabbit.jpg
+# cd ..
+# vi index.html
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Sample Deployment</title>
+  <style>
+    body {
+      color: #ffffff;
+      background-color: #0188cc;
+      font-family: Arial, sans-serif;
+      font-size: 14px;
+    }
+    h1 {
+      font-size: 500%;
+      font-weight: normal;
+      margin-bottom: 0;
+    }
+    h2 {
+      font-size: 200%;
+      font-weight: normal;
+      margin-bottom: 0;
+    }
+  </style>
+</head>
+<body>
+  <div align="center">
+    <h1>Congratulations</h1>
+    <h2>This application was deployed using AWS ECS, EKS.</h2>
+    <p>For next steps, read the <a href="https://aws.amazon.com/ko">AWS Management Console.</a></p>
+    <p><img src="images/two-rabbit.jpg" alt="두마리 토끼" height="350"></p>
+  </div>
+</body>
+</html>
+
+3. Storage 추가(Mount; Block Storage 다루기 -> sda(root volume) -> OS, App ) - AWS EBS
+마운트(mount)는 컴퓨터 과학에서 저장 장치에 접근할 수 있는 경로를 디렉터리 구조에 편입시키는 작업입니다. 좁은 의미로는 유닉스 계열의 운영 체제에서의 mount 명령어 또는 그 명령어를 사용하는 것입니다. mount 명령어를 사용하면 저장 장치의 접근 경로를 원하는 위치에 생성할 수 있습니다. 마운트를 이용하면 분산 파일 시스템으로 확장하기가 용이합니다. 사용자는 마운트된 미디어의 파일들에만 접근이 가능합니다.
+
+# df -h
+# lsblk
+# mkfs -t xfs /dev/sdb
+# mkdir /data
+# mount /dev/sdb /data
+# file -s /dev/sdb
+# cp /etc/fstab /etc/fstab.orig
+# blkid
+# vi /etc/fstab
+UUID="3ffe9c91-2ce7-457a-9fbc-07922ff6b652"  /data  xfs  defaults,nofail  0  2
+
+# umount /data
+
+4. SAMBA(Server Message Block; file storage -> 네트워크 파일 공유 -> 윈도우용 파일 시스템) - Amazon FSx 유사 - 완전 관리형 서비스
+서버 메시지 블록(Server Message Block, SMB)은 도스나 윈도우에서 파일이나 디렉터리 및 주변 장치들을 공유하는데 사용되는 메시지 형식입니다. NetBIOS는 SMB 형식에 기반을 두고 있으며, 많은 네트워크 제품들도 SMB를 사용합니다. 이러한 SMB 기반의 네트워크에는 랜매니저, 윈도우 포 워크그룹(Windows for Workgroups), 윈도우 NT, 그리고 랜 서버(Lan Server) 등이 있습니다. 서로 다른 운영 체제 사이에 파일을 공유할 수 있도록 하기 위해 SMB를 사용하는 제품들도 많이 있습니다. 그 중 하나가 삼바인데, 유닉스와 윈도우 컴퓨터들간에 디렉터리와 파일을 공유할 수 있게 합니다.
+
+- 서버
+# yum install -y samba
+# mkdir -p /var/samba/share
+# chmod 777 /var/samba/share
+# adduser kosa
+# passwd kosa
+# smbpasswd -a kosa
+# vi /etc/samba/smb.conf
+        workgroup = hali
+[share]
+        comment = Share Directory
+        path = /var/samba/share
+        browserable = yes
+        writable = yes
+        valid users = kosa
+        create mask = 0777
+        directory mask = 0777
+
+# systemctl start smb
+# systemctl enable smb
+# systemctl enable --now smb
+
+# systemctl start nmb
+# systemctl enable nmb
+# systemctl enable --now nmb
+
+# firewall-cmd --permanent --add-service=samba --zone=public
+# firewall-cmd --reload
+
+- 윈도우 클라이언트 접속 방법
+\\192.168.56.120
+
+- CentOS7 클라이언트 접속 방법
+# yum install -y samba-client
+# smbclient //192.168.56.120/share -U kosa
+
+5. NFS(Network File System; file storage -> 네트워크 파일 공유 -> 리눅스용 파일 시스템) - AWS EFS - 완전 관리형 서비스
+네트워크 파일 시스템(Network File System, NFS)은 1984년에 썬 마이크로시스템즈가 개발한 프로토콜입니다. 클라이언트 컴퓨터의 사용자가 네트워크 상의 파일을 직접 연결된 스토리지에 접근하는 방식과 비슷한 방식으로 접근하도록 도와 줍니다. 다른 수많은 프로토콜과 마찬가지로 ONC RPC 시스템을 기반으로 합니다. 네트워크 파일 시스템은 RFC에 정의된 오픈 표준이므로 누구나 구현할 수 있습니다.
+
+- 서버
+# yum install -y nfs-utils
+# mkdir /share && cd $_
+# echo "Hello" > test.txt
+# vi /etc/exports
+/share 192.168.56.0/24(rw,sync)
+
+# chmod 707 /share
+# systemctl start nfs-server
+# systemctl enable nfs-server
+# systemctl enable --now nfs-server
+# exportfs -v
+# firewall-cmd --permanent --add-service=nfs
+# firewall-cmd --permanent --add-service=rpc-bind
+# firewall-cmd --permanent --add-service=mountd
+# firewall-cmd --reload
+
+- 클라이언트
+Centos7
+# rpm -qa | grep nfs-utils
+# yum install -y nfs-utils
+
+Ubuntu
+$ sudo apt-get install -y nfs-common
+
+# showmount -e 192.168.56.120
+# mkdir share
+# mount -t nfs 192.168.56.120:/share /root/share
+# df -h
+# vi /etc/fstab
+192.168.56.120:/share /root/share nfs defaults 0 0
+
+6. DB서버(Database Management System; MariaDB) - AWS RDS - 완전 관리형 서비스
+MariaDB는 오픈 소스의 관계형 데이터베이스 관리 시스템(RDBMS)입니다. MySQL과 동일한 소스 코드를 기반으로 하며, GPL v2 라이선스를 따릅니다. 오라클 소유의 현재 불확실한 MySQL의 라이선스 상태에 반발하여 만들어졌습니다.
+
+- 서버
+repo = repository
+# vi /etc/yum.repos.d/MariaDB.repo
+[mariadb]
+name = MariaDB
+baseurl = http://yum.mariadb.org/10.4/centos7-amd64
+gpgkey=https://yum.mariadb.org/RPM-GPG-KEY-MariaDB
+gpgcheck=1
+
+# yum install -y MariaDB
+# rpm -qa | grep MariaDB
+# mariadb --version
+# systemctl start mariadb
+# systemctl enable mariadb
+# systemctl enable --now mariadb
+# mysql_secure_installation
+# systemctl restart mariadb
+# mysql -u root -p
+CREATE USER 'kosa'@'%' IDENTIFIED BY 'kosa0401';
+CREATE DATABASE IF NOT EXISTS kosadb;
+GRANT ALL PRIVILEGES ON kosadb.* TO 'kosa'@'%';
+quit
+
+# firewall-cmd --permanent --add-service=mysql
+# firewall-cmd --reload
+
+- 클라이언트
+# yum install mysql -y
+# mysql -h 192.168.56.120 -u wpuser -p
+
+
+--- 리눅스 네트워크
+1 Router (IP 공유기; AWS VPC NAT GateWay)
+네트워크 주소 변환(NAT; Network Address Translation)은 컴퓨터 네트워킹에서 쓰이는 용어로서, IP 패킷의 TCP/UDP 포트 숫자와 소스 및 목적지의 IP 주소 등을 재기록하면서 라우터를 통해 네트워크 트래픽을 주고 받는 기술을 말합니다. NAT를 이용하는 이유는 대개 사설 네트워크에 속한 여러 개의 호스트가 하나의 공인 IP 주소를 사용하여 인터넷에 접속하기 위함입니다. 많은 네트워크 관리자들이 NAT를 편리한 기법이라고 보고 널리 사용하고 있습니다.
+공인IP = Public IP
+사설IP = Private IP
+A Class 10.0.0.0 ~ 10.255.255.255
+B Class 172.16.0.0 ~ 172.31.255.255
+C Class 192.168.0.0 ~ 192.168.255.255
+
+강의실 네트워크
+Public Subnet
+192.168.0.0/24
+192.168.0.0 ~ 192.168.0.255 (256개 IP - 2개 = 254개)
+192.168.0.0   네트워크 주소(시작 IP)
+192.168.0.255 브로드캐스팅 주소(마지막 IP)
+
+Private Subnet
+10.0.21.0/24
+10.0.21.0 ~ 10.0.21.255 (256개(0~255) IP - 2개(0,255) = 254개)
+10.0.21.0   네트워크 주소(시작 IP)
+10.0.21.255 브로드캐스팅 주소(마지막 IP)
+
+# hostnamectl set-hostname nat
+
+# vi /etc/sysconfig/network-scripts/ifcfg-ens32
+TYPE=Ethernet
+BOOTPROTO=none
+NAME=ens32
+DEVICE=ens32
+ONBOOT=yes
+IPADDR=192.168.0.31
+NETMASK=255.255.255.0
+GATEWAY=192.168.0.1
+DNS1=8.8.8.8
+DNS2=8.8.4.4
+
+# vi /etc/sysconfig/network-scripts/ifcfg-ens33
+TYPE=Ethernet
+BOOTPROTO=none
+NAME=ens33
+DEVICE=ens33
+ONBOOT=yes
+IPADDR=10.0.21.1
+NETMASK=255.255.255.0
+
+yum install -y bash-completion
+설치 후 세션 재접속 필요
+
+# systemctl restart network
+# firewall-cmd --get-active-zone
+public
+  interfaces: ens32 ens33
+# nmcli c mod ens32 connection.zone external
+# nmcli c mod ens33 connection.zone internal
+# firewall-cmd --get-active-zone
+internal
+  interfaces: ens33
+external
+  interfaces: ens32
+
+# sysctl -w net.ipv4.ip_forward=1 # 리눅스 시스템을 라우터로 만드는 셋팅
+# sysctl -p # 설정 저장
+# cat /proc/sys/net/ipv4/ip_forward
+1
+
+# firewall-cmd --zone=external --permanent --add-service=dns
+# firewall-cmd --reload
+
+2. DHCP
+동적 호스트 구성 프로토콜(Dynamic Host Configuration Protocol, DHCP)은 호스트 IP 구성 관리를 단순화하는 IP 표준입니다. 동적 호스트 구성 프로토콜 표준에서는 DHCP 서버를 사용하여 IP 주소 및 관련된 기타 구성 세부 정보를 네트워크의 DHCP 사용 클라이언트에게 동적으로 할당하는 방법을 제공합니다.
+# yum install dhcp -y
+# vi /etc/dhcp/dhcpd.conf
+ddns-update-style interim;
+subnet 10.0.21.0 netmask 255.255.255.0 {
+option routers 10.0.21.1;
+option subnet-mask 255.255.255.0;
+range dynamic-bootp 10.0.21.100 10.0.21.110;
+option domain-name-servers 8.8.8.8, 8.8.4.4;
+default-lease-time 7200;
+max-lease-time 86400;
+}
+
+# systemctl enable dhcpd
+# systemctl start dhcpd
+# systemctl enable --now dhcpd
+
+WEB01_SAMBA   10.0.21.2
+WEB02_NFS     10.0.21.5
+DNS_DATABASE  10.0.21.3
+
+# cp authorized_keys authorized_keys.pub
+# ssh-copy-id -i authorized_keys.pub root@172.31.0.101
+# chmod 400 my-key.pem
+# ssh -i my-key.pem root@172.31.0.101
+
+192.168.0.85:221 -> 172.31.0.101:22(WEB01)
+192.168.0.85:222 -> 172.31.0.100:22(WEB02)
+192.168.0.85:223 -> 172.31.0.102:22(DNS)
+
+ssh -i my-key.pem root@192.168.0.85
+ssh -p 221 -i my-key.pem root@192.168.0.85
+ssh -p 222 -i my-key.pem root@192.168.0.85
+ssh -p 223 -i my-key.pem root@192.168.0.85
+
+@@ 포트포워딩
+# firewall-cmd --permanent --zone=external --add-forward-port=port=221:proto=tcp:toport=22:toaddr=10.0.21.100
+# firewall-cmd --permanent --zone=external --add-forward-port=port=222:proto=tcp:toport=22:toaddr=10.0.21.102
+# firewall-cmd --permanent --zone=external --add-forward-port=port=223:proto=tcp:toport=22:toaddr=10.0.21.101
+# firewall-cmd --permanent --zone=external --add-forward-port=port=3389:proto=tcp:toport=3389:toaddr=10.0.21.4
+# firewall-cmd --reload
+# firewall-cmd --list-all --zone=external
+
+3. DNS - AWS Route53
+도메인 네임 시스템(Domain Name System, DNS)은 호스트의 도메인 이름을 호스트의 네트워크 주소로 바꾸거나 그 반대의 변환을 수행할 수 있도록 하기 위해 개발되었습니다. 특정 컴퓨터(또는 네트워크로 연결된 임의의 장치)의 주소를 찾기 위해, 사람이 이해하기 쉬운 도메인 이름을 숫자로 된 식별 번호(IP 주소)로 변환해 줍니다. 도메인 네임 시스템은 흔히 "전화번호부"에 비유됩니다. 인터넷 도메인 주소 체계로서 TCP/IP의 응용에서, www.example.com과 같은 주 컴퓨터의 도메인 이름을 192.168.1.0과 같은 IP 주소로 변환하고 라우팅 정보를 제공하는 분산형 데이터베이스 시스템입니다.
+
+ISP(Internet Service Provider: KT, SKB, LGU+, Dreamline ...) 
+DNS
+
+# yum -y install bind bind-chroot bind-utils
+ggdG
+# vi /etc/named.conf
+options {
+        listen-on port 53 { 127.0.0.1; 192.168.0/24; 10.0.21/24; };
+        listen-on-v6 port 53 { ::1; };
+        directory       "/var/named";
+        dump-file       "/var/named/data/cache_dump.db";
+        statistics-file "/var/named/data/named_stats.txt";
+        memstatistics-file "/var/named/data/named_mem_stats.txt";
+        recursing-file  "/var/named/data/named.recursing";
+        secroots-file   "/var/named/data/named.secroots";
+        allow-query     { localhost; 192.168.0/24; 10.0.21/24; };
+        forwarders { 8.8.8.8; 8.8.4.4; };
+
+        recursion yes;
+
+        dnssec-enable yes;
+        dnssec-validation yes;
+
+        /* Path to ISC DLV key */
+        bindkeys-file "/etc/named.iscdlv.key";
+
+        managed-keys-directory "/var/named/dynamic";
+
+        pid-file "/run/named/named.pid";
+        session-keyfile "/run/named/session.key";
+};
+
+logging {
+        channel default_debug {
+                file "data/named.run";
+                severity dynamic;
+        };
+};
+view "internal" {
+        zone "." IN {
+                type hint;
+                file "named.ca";
+        };
+
+        include "/etc/named.rfc1912.zones";
+        include "/var/named/clown18.shop.zones"; # 호스팅 영역 생성
+};
+
+# vi /var/named/clown18.shop.zones
+zone "clown18.shop" IN {
+        type master;
+        file "clown18.shop.db";
+        allow-update { none; };
+};
+
+zone "21.0.10.in-addr.arpa" IN {
+        type master;
+        file "21.0.10.in-addr.arpa.db";
+        allow-update { none; };
+};
+
+# vi /var/named/clown18.shop.db
+$TTL    86400
+@       IN      SOA     clown18.shop.   root.clown18.shop.(
+                        2022041401 ; Serial
+                        3h         ; Refresh
+                        1h         ; Retry
+                        1w         ; Expire
+                        1h )       ; Minimum
+
+        IN      NS      ns.clown18.shop.
+        IN      MX 10   ns.clown18.shop.
+ns      IN      A       10.0.21.1
+web01   IN      A       10.0.21.100
+web02   IN      A       10.0.21.102
+web03   IN      A       10.0.21.103
+db      IN      A       10.0.21.101
+
+* IP LIST
+WEB01		10.0.21.100
+WEB02		10.0.21.102
+WEB03		10.0.21.103
+DATABASE	10.0.21.101
+
+# vi /var/named/21.0.10.in-addr.arpa.db
+$TTL	86400
+@	IN	SOA	clown18.shop.	root.clown18.shop.(
+			2022041401 ; Serial
+			3h         ; Refresh
+			1h         ; Retry
+			1w         ; Expire
+                        1h )       ; Minimum
+
+	IN	NS	ns.clown18.shop.
+1	IN	PTR	ns.clown18.shop.
+
+# systemctl start named && systemctl enable named
+# systemctl enable --now named
+
+# firewall-cmd --permanent --add-service=dns
+# firewall-cmd --reload
+
+# vi /etc/sysconfig/network-scripts/ifcfg-ens192
+DNS1=192.168.0.31
+PEERDNS=no
+
+# systemctl restart NetworkManager
+
+* 대표적인 레코드
+SOA  : 다루는 도메인 버전과 업데이트 시간 간격 등의 정보를 저장하는 레코드
+A    : 호스트 이름으로 IPv4 주소를 조회할 때 사용하는 레코드
+       예: 호스트 ns.clown18.shop의 IPv4 주소는 172.31.0.130
+AAAA : 호스트 이름으로 IPv6 주소를 조회할 때 사용하는 레코드
+       예: jprs.jp의 IPv6 주소는 2001:218:3001:7::80
+PTR  : IP 주소로 호스트 이름을 조회할 때 사용하는 레코드
+       예: 172.31.0.130의 호스트 이름은 ns.clown18.shop
+NS   : DNS 서버의 호스트 이름 혹은 IP 주소를 저장하는 레코드
+       예: clown18.shop의 DNS 서버는 ns.clown18.shop
+MX   : 메일 서버 호스트 이름 혹은 IP 주소를 저장하는 레코드
+       예: clown18.shop의 메일 서버는 mail.clown18.shop
+CNAME: 호스트 이름의 별칭을 저장하는 레코드
+       예: www.clown18.shop은 ns.clown18.shop의 별칭(alias)     
+
+yum install -y bind-utils
+dig A web01.clown18.shop
+dig -x 172.31.0.102
+
+4. HAproxy - AWS ELB - ALB - 로드밸런서 - 부하분산
+HAProxy는 여러 서버에 요청을 분산시키는 TCP 및 HTTP 기반 애플리케이션을 위한 고가용성 로드 밸런서 및 역방향 프록시를 제공하는 무료 오픈 소스 소프트웨어 입니다. C로 작성되었으며 빠르고 효율적(프로세서 및 메모리 사용 측면에서)으로 유명합니다.
+# yum install -y haproxy
+# vi /etc/haproxy/haproxy.cfg
+
+global
+    daemon
+
+defaults
+    mode               http
+
+frontend  http-in
+    bind *:80
+    acl firefox hdr_sub(User-Agent) Firefox
+    acl trident hdr_sub(User-Agent) Trident
+    default_backend    backend_servers
+    use_backend bk_firefox if firefox
+    use_backend bk_trident if chrome
+
+
+backend backend_servers
+    balance            roundrobin
+#    cookie  SVID insert indirect nocache maxlife 3m
+    server             web01 web01.clown18.shop:80 cookie w1 check
+    server             web02 web02.clown18.shop:80 cookie w2 check
+    server             web03 web03.clown18.shop:80 cookie w3 check
+
+backend bk_firefox
+    server             web01 10.0.21.2:80
+backend bk_trident
+    server             web02 10.0.21.5:80
+
+# systemctl start haproxy
+# systemctl enable haproxy
+# systemctl enable --now haproxy

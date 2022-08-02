@@ -1,0 +1,1512 @@
+--- CentOS7 설정
+# yum install -y bash-completion wget unzip rdate
+# rdate -s time.bora.net
+# setenforce 0
+# sed -i s/^SELINUX=.*$/SELINUX=disabled/ /etc/selinux/config
+# cd /tmp
+
+--- AWS CLI 설치
+# curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+# unzip awscliv2.zip
+# ./aws/install
+# vi .bash_profile
+complete -C '/usr/local/bin/aws_completer' aws
+# aws --version
+# aws configure
+
+https://docs.aws.amazon.com/cli/latest/reference/
+
+1. VPC와 서브넷 만들기 (ad-hoc)
+# aws ec2 create-vpc --cidr-block 192.168.0.0/16 --tag-specification "ResourceType=vpc,Tags=[{Key=Name,Value=NEW-VPC}]" --output text
+# NEW_VPC=vpc-0b86b4b6ab0bce886
+# echo $NEW_VPC
+# aws ec2 create-subnet --vpc-id $NEW_VPC --cidr-block 192.168.0.0/20 --availability-zone ap-northeast-2a --tag-specification "ResourceType=subnet,Tags=[{Key=Name,Value=NEW-PUBLIC-SUBNET-2A}]"
+# aws ec2 create-subnet --vpc-id $NEW_VPC --cidr-block 192.168.16.0/20 --availability-zone ap-northeast-2b --tag-specification "ResourceType=subnet,Tags=[{Key=Name,Value=NEW-PUBLIC-SUBNET-2B}]"
+# aws ec2 create-subnet --vpc-id $NEW_VPC --cidr-block 192.168.32.0/20 --availability-zone ap-northeast-2c --tag-specification "ResourceType=subnet,Tags=[{Key=Name,Value=NEW-PUBLIC-SUBNET-2C}]"
+# aws ec2 create-subnet --vpc-id $NEW_VPC --cidr-block 192.168.48.0/20 --availability-zone ap-northeast-2d --tag-specification "ResourceType=subnet,Tags=[{Key=Name,Value=NEW-PUBLIC-SUBNET-2D}]"
+# aws ec2 describe-subnets --filters "Name=vpc-id,Values=$NEW_VPC" --query 'Subnets[*].{AZ:AvailabilityZone,CIDR:CidrBlock}'
+
+2. 서브넷을 퍼블릭 서브넷으로 만들기
+# aws ec2 create-internet-gateway --tag-specification "ResourceType=internet-gateway,Tags=[{Key=Name,Value=NEW-IGW}]" --output text
+# NEW_IGW=igw-07bcf6f436dc7df46
+# aws ec2 attach-internet-gateway --vpc-id $NEW_VPC --internet-gateway-id $NEW_IGW
+# aws ec2 describe-internet-gateways --output table
+# aws ec2 describe-route-tables --filter "Name=vpc-id,Values=$NEW_VPC"
+# NEW_RTB=rtb-0c92dd389865be7e3
+# aws ec2 create-route --route-table-id $NEW_RTB --destination-cidr-block 0.0.0.0/0 --gateway-id $NEW_IGW
+# aws ec2 create-tags --resources $NEW_RTB --tags "Key=Name,Value=NEW-PUBLIC-SUBNET-RTB"
+# aws ec2 describe-route-tables --route-table-id $NEW_RTB --output table
+# aws ec2 describe-subnets --filters "Name=vpc-id,Values=$NEW_VPC" --query 'Subnets[*].{ID:SubnetId,CIDR:CidrBlock}'
+# NEW_SID1=subnet-0e8e69f973474af54
+# NEW_SID2=subnet-0e10cb13471fe32b8
+# NEW_SID3=subnet-0978e524d43963fa3
+# NEW_SID4=subnet-0449ca18aed5755bb
+# aws ec2 associate-route-table  --subnet-id $NEW_SID1 --route-table-id $NEW_RTB
+# aws ec2 associate-route-table  --subnet-id $NEW_SID2 --route-table-id $NEW_RTB
+# aws ec2 associate-route-table  --subnet-id $NEW_SID3 --route-table-id $NEW_RTB
+# aws ec2 associate-route-table  --subnet-id $NEW_SID4 --route-table-id $NEW_RTB
+# aws ec2 modify-subnet-attribute --subnet-id $NEW_SID1 --map-public-ip-on-launch
+# aws ec2 modify-subnet-attribute --subnet-id $NEW_SID2 --map-public-ip-on-launch
+# aws ec2 modify-subnet-attribute --subnet-id $NEW_SID3 --map-public-ip-on-launch
+# aws ec2 modify-subnet-attribute --subnet-id $NEW_SID4 --map-public-ip-on-launch
+# aws ec2 modify-vpc-attribute --vpc-id $NEW_VPC --enable-dns-hostnames
+
+3. 키페어, 보안그룹 만들기
+# aws ec2 create-key-pair --key-name new-key --query 'KeyMaterial' --output text > new-key.pem
+# chmod 400 new-key.pem
+# aws ec2 create-security-group --group-name NEW-SG-WEB --description "Security group for HTTP_SSH access" --vpc-id $NEW_VPC
+# NEW_SG=sg-05fff0c87d3731fdc
+# aws ec2 authorize-security-group-ingress --group-id $NEW_SG --protocol tcp --port 22 --cidr 0.0.0.0/0
+# aws ec2 authorize-security-group-ingress --group-id $NEW_SG --protocol tcp --port 80 --cidr 0.0.0.0/0
+# aws ec2 authorize-security-group-ingress --group-id $NEW_SG --protocol icmp --port -1 --cidr 0.0.0.0/0
+
+4. 볼륨 및 인스턴스 만들기
+# vi mapping.json
+[
+    {
+        "DeviceName": "/dev/xvda",
+        "Ebs": {
+            "VolumeSize": 8
+        }
+    },
+    {
+        "DeviceName": "/dev/xvdb",
+        "Ebs": {
+            "VolumeSize": 8
+        }
+    }
+]
+
+# vi my_script.txt
+#!/bin/bash
+yum install -y httpd
+systemctl enable --now httpd
+echo "<h1>Hello AWS CLI</h1>" > /var/www/html/index.html
+
+# aws ec2 run-instances \
+--image-id ami-0fd0765afb77bcca7 \
+--count 1 \
+--instance-type t2.micro \
+--key-name new-key \
+--security-group-ids $NEW_SG \
+--subnet-id $NEW_SID1 \
+--block-device-mappings file://mapping.json \
+--user-data file://my_script.txt \
+--tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=NEW-WEB}]' 'ResourceType=volume,Tags=[{Key=Name,Value=NEW-ROOT}]'
+
+# NEW_IID=i-0c49036485c1ce2bd
+# aws ec2 describe-instances --instance-id $NEW_IID | grep PublicIp
+# ssh -i "new-key.pem" ec2-user@3.38.165.0
+# curl 3.38.165.0
+
+5. 정리
+# aws ec2 terminate-instances --instance-id $NEW_IID
+# aws ec2 delete-security-group --group-id $NEW_SG
+# aws ec2 delete-subnet --subnet-id $NEW_SID1
+# aws ec2 delete-subnet --subnet-id $NEW_SID2
+# aws ec2 delete-subnet --subnet-id $NEW_SID3
+# aws ec2 delete-subnet --subnet-id $NEW_SID4
+# aws ec2 detach-internet-gateway --internet-gateway-id $NEW_IGW --vpc-id $NEW_VPC
+# aws ec2 delete-internet-gateway --internet-gateway-id $NEW_IGW
+# aws ec2 delete-vpc --vpc-id $NEW_VPC
+
+--- AWS CloudFormation(Azure Resource Manager,GCP Deployment Manager)
+- 주요 섹션 설명
+1. Resources(생성) : AWS 인프라의 실질적인 섹션입니다. EC2 인스턴스, S3 버킷, ELB등과 같은 클라우드 포메이션을 이용해 AWS 웹 콘솔에서 실행하는 것으로 거의 모든 리소스 유형을 생성할 수 있습니다. 하지만 신규 또는 최첨단의 AWS 리소스는 즉시 제공되지 않는 경우가 종종 있습니다. 리소스에는 기본 반환값이 있습니다. Ref를 이용해 이 반환값을 얻어올 수 있고 템플릿의 다른 위치에 사용할 수 있습니다. 예를 들어 AWS::EC2::VPC 리소스 유형은 기본 반환값을 갖고 있고 이 값은 VPC의 ID 입니다.
+
+2. Parameters(입력) : 명령줄 도구에 입력하는 매개변수와 동일하게 스택을 만들거나 업데이트할 때 정의하는 입력값입니다. 파라미터는 템플릿의 변경 없이도 스택을 커스터마이즈할 수 있게 해줍니다. AMI ID, VPC ID, Subnet ID등과 같은 매개변수를 사용할 수 있습니다.
+
+3. Output(출력) : 스택이 완료된 후에 결과물을 출력하려고 할때 유용합니다. 예를 들어 ELB의 퍼블릭 URL이나 EC2의 퍼블릭 IP를 출력할 수 있습니다.
+
+4. Mapping(지정) : 리전의 특화된 템플릿에서 어떠한 요소를 참조할 때 필요합니다. 예를 들어 템플릿에 EC2 AMI ID에 대한 매핑을 지정하는 것입니다. AMI ID가 리전에 특화된 리소스이기 때문에 유효한 AMI ID를 리전별로 지정하려고 할때 사용합니다.
+
+# vi new-vpc.yaml
+AWSTemplateFormatVersion: 2010-09-09
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 192.168.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: NEW-VPC
+  SubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: ap-northeast-2a
+      VpcId: !Ref VPC
+      CidrBlock: 192.168.0.0/20
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: NEW-PUBLIC-SUBNET-2A
+  SubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: ap-northeast-2b
+      VpcId: !Ref VPC
+      CidrBlock: 192.168.16.0/20
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: NEW-PUBLIC-SUBNET-2B
+  SubnetC:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: ap-northeast-2c
+      VpcId: !Ref VPC
+      CidrBlock: 192.168.32.0/20
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: NEW-PUBLIC-SUBNET-2C
+  SubnetD:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: ap-northeast-2d
+      VpcId: !Ref VPC
+      CidrBlock: 192.168.48.0/20
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: NEW-PUBLIC-SUBNET-2D
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: NEW-IGW
+  VPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+  RouteTableA:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: NEW-PUBLIC-RTB
+  InternetRoute:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGateway
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+      RouteTableId: !Ref RouteTableA
+  SubnetARouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref RouteTableA
+      SubnetId: !Ref SubnetA
+  SubnetBRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref RouteTableA
+      SubnetId: !Ref SubnetB
+  SubnetCRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref RouteTableA
+      SubnetId: !Ref SubnetC
+  SubnetDRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref RouteTableA
+      SubnetId: !Ref SubnetD
+
+# vi new-ec2.yaml
+AWSTemplateFormatVersion: 2010-09-09
+Mappings:
+  RegionMap:
+    ap-northeast-2:
+      AMIID: ami-0fd0765afb77bcca7
+    ap-northeast-1:
+      AMIID: ami-0b7546e839d7ace12
+Parameters:
+  InstanceType:
+    Type: String
+    Default: t2.micro
+    Description: Enter instance size. Default is t2.micro
+  VPC:
+    Type: String
+    Default: vpc-01a276b266db7833b
+    Description: VPC ID.
+  Subnet:
+    Type: String
+    Default: subnet-01132b9dddcf71d3d
+    Description: Subnet ID.
+  AMI:
+    Type: String
+    Default: AMIID
+    Description: The Linux AMI to use.
+  Key:
+    Type: String
+    Default: new-key
+    Description: The key used to access the instance.
+Resources:
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: "NEW-SG-WEB"
+      GroupDescription: "NEW-SG-WEB"
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: 123.142.252.25/32
+        - IpProtocol: icmp
+          FromPort: '-1'
+          ToPort: '-1'
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+  EC2Instance:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      SubnetId: !Ref Subnet
+#      ImageId: !Ref AMI
+      ImageId: !FindInMap [ RegionMap, !Ref "AWS::Region", !Ref AMI ]
+      InstanceType:
+        Ref: InstanceType
+      KeyName: !Ref Key
+      SecurityGroupIds:
+        - Ref: InstanceSecurityGroup
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeSize: 8
+        - DeviceName: /dev/xvdb
+          Ebs:
+            VolumeSize: 8
+      Tags:
+        - Key: Name
+          Value: NEW-EC2
+
+      UserData:
+        Fn::Base64: |
+          #cloud-boothook
+          #!/bin/bash
+          yum install -y httpd
+          systemctl enable --now httpd
+          echo "Hello World!" > /var/www/html/index.html
+Outputs:  
+  PublicIp:    
+    Description: PublicIp Output    
+    Value: {"Fn::GetAtt": ["EC2Instance","PublicIp"]}
+
+--- Terraform 작동 방식
+테라폼은 해시코프사에서 Go언어로 개발한 오픈소스도구입니다. 운영체제마다 바이너리 파일이 존재하는데 Go 코드는 하나의 바이너리 파일로 컴파일되며 Terraform이라는 명령어로 실행할 수 있습니다. 이 Terraform 명령어를 사용하여 노트북, 데스크탑, 빌드 서버 또는 다른 컴퓨터에서든 인프라를 배포할 수 있으며 이를 위해 추가 인프라(마스터, 에이전트)를 생성할 필요가 없습니다. 즉 Terraform 명령어가 AWS, Azure, GCP, Openstack 등의 Provider를 대신해 API를 호출하여 리소스를 생성합니다.
+테라폼은 생성하려는 인프라 정보가 담겨 있는 텍스트로 이루어진 테라폼 구성 파일을 생성하여 API를 호출합니다. 이러한 구성 값들이 '코드형 인프라'를 만드는 바로 그 '코드'입니다. 팀의 누군가가 인프라를 수정하고자 할 때, 서버에 직접 접속하여 작업하거나 수작업으로 수정하는 대신 테라폼을 사용하여 구성 파일을 수정할 있습니다. 
+
+# vi main.tf
+provider "aws" { # aws를 공급자로 사용하여
+  region = "ap-northeast-2" # 서울 리전에 인프라를 배포한다는 의미
+}
+resource "aws_instance" "example" {
+  ami           = "ami-0fd0765afb77bcca7"
+  instance_type = "t2.micro"
+}
+
+resource "<PROVIDER>_<TYPE>" "<NAME>" { # PROVIDER는 aws 같은 공급자의 이름이고 TYPE은 instance 같이 해당 공급자에서 생성할 리소스 유형입니다. NAME은 테라폼 코드에서 이 리소스를 참조하기 위해 사용할 수 있는 example과 같은 '식별자'입니다. CONFIG는 특정 리소스에 대한 하나 이상의 인수(argument)로 구성됩니다.
+  [CONFIG ...]
+}
+
+--- Terraform 주요 명령어
+- *.tf 스크립트 작성
+- terraform init : terraform 명령어에는 테라폼의 기본 기능이 포함되어 있지만 모든 공급자(AWS, Azure, GCP 등)에 대한 코드가 포함되어 있지 않습니다. 그렇게 때문에 terraform init 명령어를 실행하여 테라폼에 코드를 스캔하도록 지시하고 어느 공급자인지 확인하고, 필요한 코드를 다운로드하도록 해야 합니다. 기본적으로 공급자 코드는 테라폼의 .terraform 폴더에 다운로드됩니다.
+
+- terraform plan : 테라폼이 구성 파일을 사용하여 작업을 수행하기 전에 코드의 온전성을 검사할 수 있습니다. plan 명령어는 리눅스에서 쓰이는 diff 명령의 결괏값과 유사합니다. + 가 있는 항목은 추가되고, - 가 있는 항목은 삭제된다는 뜻입니다. ~ 가 있는 항목은 수정됩니다. 
+
+- terraform apply : 테라폼의 구성 파일을 실행하려면 terraform apply 명령어를 실행합니다.
+
+
+--- Terraform 설치
+# wget https://releases.hashicorp.com/terraform/1.2.3/terraform_1.2.3_linux_amd64.zip
+# unzip terraform_1.2.3_linux_amd64.zip
+# mv terraform /usr/local/bin/
+# terraform -version
+
+--- AWS Terraform ec2 인스턴스 생성
+# mkdir aws && cd $_
+# vi main.tf
+provider "aws" {
+  region = "ap-northeast-2"
+}
+
+resource "aws_instance" "example" {
+  ami           = "ami-0fd0765afb77bcca7"
+  instance_type = "t2.micro"
+}
+
+# terraform init
+# terraform plan
+# terraform apply
+
+--- ec2 인스턴스 정보 추가
+# vi main.tf
+provider "aws" {
+  region = "ap-northeast-2"
+}
+
+resource "aws_instance" "example" {
+  ami           = "ami-0fd0765afb77bcca7"
+  instance_type = "t2.micro"
+  tags = {
+    Name = "terraform-example"
+  }
+}
+
+# terraform init
+# terraform plan
+# terraform apply
+# terraform destroy
+
+--- ec2 인스턴스 웹서버 배포
+# vi main.tf
+data "aws_vpc" "new_vpc" {
+  tags = {
+    Name = "NEW-VPC"
+  }
+}
+
+data "aws_subnet" "apne2_az1" {
+  tags = {
+    Name = "NEW-PUBLIC-SUBNET-2A"
+  }
+}
+
+resource "aws_instance" "example" {
+  ami                    = "ami-0fd0765afb77bcca7"
+  instance_type          = "t2.micro"
+  subnet_id              = data.aws_subnet.apne2_az1.id
+  vpc_security_group_ids = aws_security_group.instance.id
+  key_name  = "new-key"
+  user_data = <<-EOF
+              #!/bin/bash
+              yum install -y httpd
+              systemctl enable --now httpd
+              echo "Hello, Terraform" > /var/www/html/index.html
+              EOF
+
+  tags = {
+    Name = "terraform-example"
+  }
+}
+
+resource "aws_security_group" "instance" {
+
+  name = var.security_group_name
+  vpc_id = data.aws_vpc.new_vpc.id
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["123.142.252.25/32"]
+  }
+  ingress {
+    from_port   = -1
+    to_port     = -1
+    protocol    = "icmp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  tags = {
+    Name = "terraform-sg"
+  }
+}
+
+variable "security_group_name" {
+  description = "The name of the security group"
+  type        = string
+  default     = "terraform-example-instance"
+}
+
+output "public_ip" {
+  value       = aws_instance.example.public_ip
+  description = "The public IP of the Instance"
+}
+
+output "public_dns" {
+  value       = aws_instance.example.public_dns
+  description = "The Public dns of the Instance"
+}
+
+output "private_ip" {
+  value       = aws_instance.example.private_ip
+  description = "The Private_ip of the Instance"
+}
+
+# terraform init
+# terraform plan
+# terraform apply
+# terraform output public_ip
+# terraform destroy
+
+--- vpc 만들기
+# vi new-vpc.tf
+provider "aws" {
+  region = "ap-northeast-2"
+}
+data "aws_availability_zones" "available" {
+  state = "available"
+}
+resource "aws_vpc" "new_vpc" {
+  cidr_block  = "192.168.0.0/16"
+  enable_dns_hostnames = true
+  enable_dns_support = true
+  instance_tenancy = "default"
+
+  tags = {
+    Name = "NEW-VPC"
+  }
+}
+resource "aws_subnet" "new_public_subnet_2a" {
+  vpc_id = aws_vpc.new_vpc.id
+  cidr_block = "192.168.0.0/20"
+  map_public_ip_on_launch = true
+  availability_zone = data.aws_availability_zones.available.names[0]
+  tags = {
+    Name = "NEW-PUBLIC-SUBNET-2A"
+  }
+}
+resource "aws_subnet" "new_public_subnet_2b" {
+  vpc_id = aws_vpc.new_vpc.id
+  cidr_block = "192.168.16.0/20"
+  map_public_ip_on_launch = true
+  availability_zone = data.aws_availability_zones.available.names[1]
+  tags = {
+    Name = "NEW-PUBLIC-SUBNET-2B"
+  }
+}
+resource "aws_subnet" "new_public_subnet_2c" {
+  vpc_id = aws_vpc.new_vpc.id
+  cidr_block = "192.168.32.0/20"
+  map_public_ip_on_launch = true
+  availability_zone = data.aws_availability_zones.available.names[2]
+  tags = {
+    Name = "NEW-PUBLIC-SUBNET-2C"
+  }
+}
+resource "aws_subnet" "new_public_subnet_2d" {
+  vpc_id = aws_vpc.new_vpc.id
+  cidr_block = "192.168.48.0/20"
+  map_public_ip_on_launch = true
+  availability_zone = data.aws_availability_zones.available.names[3]
+  tags = {
+    Name = "NEW-PUBLIC-SUBNET-2D"
+  }
+}
+# 인터넷 게이트웨이 생성과 attachment작업까지 같이된다.
+resource "aws_internet_gateway" "new_igw" {
+  vpc_id = aws_vpc.new_vpc.id
+  tags = {
+    Name = "NEW-IGW"
+  }
+}
+# 라우팅 테이블 생성과 라우팅 정보를 함께 생성
+# 0.0.0.0/0이면 IGW로
+# 기본 라우팅 테이블 이용시 aws_default_route_table
+# default_route_table_id = "${aws_vpc.new_vpc.default_route_table_id}"
+# 위와같은 형식으로 사용할 수 있다.
+resource "aws_route_table" "new_public_rtb" {
+  vpc_id = aws_vpc.new_vpc.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.new_igw.id
+  }
+  tags = {
+    Name = "NEW-PUBLIC-RTB"
+  }
+}
+#라우팅 테이블과 서브넷 명시적 연결
+resource "aws_route_table_association" "new_public_subnet_2a_association" {
+  subnet_id = aws_subnet.new_public_subnet_2a.id
+  route_table_id = aws_route_table.new_public_rtb.id
+}
+resource "aws_route_table_association" "new_public_subnet_2b_association" {
+  subnet_id = aws_subnet.new_public_subnet_2b.id
+  route_table_id = aws_route_table.new_public_rtb.id
+}
+resource "aws_route_table_association" "new_public_subnet_2c_association" {
+  subnet_id = aws_subnet.new_public_subnet_2c.id
+  route_table_id = aws_route_table.new_public_rtb.id
+}
+resource "aws_route_table_association" "new_public_subnet_2d_association" {
+  subnet_id = aws_subnet.new_public_subnet_2d.id
+  route_table_id = aws_route_table.new_public_rtb.id
+}
+
+
+--- ec2 alb
+# vi main.tf
+provider "aws" {
+  region = "ap-northeast-2"
+}
+
+
+data "aws_availability_zones" "available" {
+  state = "available"
+}
+resource "aws_vpc" "new_vpc" {
+  cidr_block  = "192.168.0.0/16"
+  enable_dns_hostnames = true
+  enable_dns_support = true
+  instance_tenancy = "default"
+
+  tags = {
+    Name = "NEW-VPC"
+  }
+}
+resource "aws_subnet" "new_public_subnet_2a" {
+  vpc_id = aws_vpc.new_vpc.id
+  cidr_block = "192.168.0.0/20"
+  map_public_ip_on_launch = true
+  availability_zone = data.aws_availability_zones.available.names[0]
+  tags = {
+    Name = "NEW-PUBLIC-SUBNET-2A"
+  }
+}
+resource "aws_subnet" "new_public_subnet_2b" {
+  vpc_id = aws_vpc.new_vpc.id
+  cidr_block = "192.168.16.0/20"
+  map_public_ip_on_launch = true
+  availability_zone = data.aws_availability_zones.available.names[1]
+  tags = {
+    Name = "NEW-PUBLIC-SUBNET-2B"
+  }
+}
+resource "aws_subnet" "new_public_subnet_2c" {
+  vpc_id = aws_vpc.new_vpc.id
+  cidr_block = "192.168.32.0/20"
+  map_public_ip_on_launch = true
+  availability_zone = data.aws_availability_zones.available.names[2]
+  tags = {
+    Name = "NEW-PUBLIC-SUBNET-2C"
+  }
+}
+resource "aws_subnet" "new_public_subnet_2d" {
+  vpc_id = aws_vpc.new_vpc.id
+  cidr_block = "192.168.48.0/20"
+  map_public_ip_on_launch = true
+  availability_zone = data.aws_availability_zones.available.names[3]
+  tags = {
+    Name = "NEW-PUBLIC-SUBNET-2D"
+  }
+}
+resource "aws_internet_gateway" "new_igw" {
+  vpc_id = aws_vpc.new_vpc.id
+  tags = {
+    Name = "NEW-IGW"
+  }
+}
+resource "aws_route_table" "new_public_rtb" {
+  vpc_id = aws_vpc.new_vpc.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.new_igw.id
+  }
+  tags = {
+    Name = "NEW-PUBLIC-RTB"
+  }
+}
+resource "aws_route_table_association" "new_public_subnet_2a_association" {
+  subnet_id = aws_subnet.new_public_subnet_2a.id
+  route_table_id = aws_route_table.new_public_rtb.id
+}
+resource "aws_route_table_association" "new_public_subnet_2b_association" {
+  subnet_id = aws_subnet.new_public_subnet_2b.id
+  route_table_id = aws_route_table.new_public_rtb.id
+}
+resource "aws_route_table_association" "new_public_subnet_2c_association" {
+  subnet_id = aws_subnet.new_public_subnet_2c.id
+  route_table_id = aws_route_table.new_public_rtb.id
+}
+resource "aws_route_table_association" "new_public_subnet_2d_association" {
+  subnet_id = aws_subnet.new_public_subnet_2d.id
+  route_table_id = aws_route_table.new_public_rtb.id
+}
+
+
+# data "aws_vpc" "new_vpc" {
+#   tags = {
+#     Name = "NEW-VPC"
+#   }
+# }
+# data "aws_subnet" "apne2_az1" {
+#   tags = {
+#     Name = "NEW-PUBLIC-SUBNET-2A"
+#   }
+# }
+# data "aws_subnet" "apne2_az3" {
+#   tags = {
+#     Name = "NEW-PUBLIC-SUBNET-2C"
+#   }
+# }
+
+variable "security_group_name" {
+  description = "The name of the security group"
+  type        = string
+  default     = "NEW-SG-ALB"
+}
+
+resource "aws_security_group" "new_sg_alb" {
+  name   = var.security_group_name
+  vpc_id = aws_vpc.new_vpc.id
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  tags = {
+    Name = "NEW-SG-ALB"
+  }
+}
+
+# 로드밸런서 생성 부분으로 elb가 아닌 lb로 표기한다.
+resource "aws_lb" "frontend" {
+  # 이름에 _를 사용하면 오류 발생
+  name               = "alb-example"
+  # 체계를 내부가 아닌 인터넷 경계로 설정
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.new_sg_alb.id]
+  subnets            = [
+    aws_subnet.new_public_subnet_2a.id,
+    aws_subnet.new_public_subnet_2c.id
+  ]
+
+  tags = {
+    Name = "NEW-ALB"
+  }
+  # 인스턴스를 지우기전에 만들라는 설정으로 AutoScaling에서 사용된다.
+  lifecycle { create_before_destroy = true }
+}
+
+
+resource "aws_instance" "alb_vm_01" {
+  ami                    = "ami-0fd0765afb77bcca7"
+  instance_type          = "t2.micro"
+  subnet_id              = aws_subnet.new_public_subnet_2a.id
+  vpc_security_group_ids = [aws_security_group.new_sg_alb.id]
+  key_name  = "new-key"
+  user_data = <<EOF
+              #! /bin/bash
+              yum install -y httpd
+              systemctl enable --now httpd
+              echo "Hello, Terraform01" > /var/www/html/index.html
+              EOF
+
+  tags = {
+    Name = "ALB01"
+  }
+}
+
+resource "aws_instance" "alb_vm_02" {
+  ami                    = "ami-0fd0765afb77bcca7"
+  instance_type          = "t2.micro"
+  subnet_id              = aws_subnet.new_public_subnet_2c.id
+  vpc_security_group_ids = [aws_security_group.new_sg_alb.id]
+  key_name  = "new-key"
+  user_data = <<-EOF
+              #! /bin/bash
+              yum install -y httpd
+              systemctl enable --now httpd
+              echo "Hello, Terraform02" > /var/www/html/index.html
+              EOF
+
+  tags = {
+    Name = "ALB02"
+  }
+}
+
+resource "aws_lb_target_group" "tg" {
+  name        = "TargetGroup"
+  port        = 80
+  target_type = "instance"
+  protocol    = "HTTP"
+  vpc_id      = aws_vpc.new_vpc.id
+
+  health_check {
+    path                = "/"
+    protocol            = "HTTP"
+    matcher             = "200"
+    interval            = 15
+    timeout             = 3
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+  }
+}
+resource "aws_alb_target_group_attachment" "tgattachment01" {
+  target_group_arn = aws_lb_target_group.tg.arn
+  target_id        = aws_instance.alb_vm_01.id
+  port             = 80
+}
+resource "aws_alb_target_group_attachment" "tgattachment02" {
+  target_group_arn = aws_lb_target_group.tg.arn
+  target_id        = aws_instance.alb_vm_02.id
+  port             = 80
+}
+# 리스너 생성
+resource "aws_lb_listener" "front_end" {
+  load_balancer_arn = aws_lb.frontend.arn
+  port              = "80"
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.tg.arn
+  }
+}
+output "lb_dns_name" {
+  description = "The DNS name of the load balancer."
+  value       = aws_lb.frontend.dns_name
+}
+
+--- terraform 변수 활용
+# vi variables.tf
+variable "security_group_name" {
+  description = "The name of the security group"
+  type        = string
+  default     = "terraform-example-instance"
+}
+
+variable "http_port" {
+  description = "The port the server will use for HTTP requests"
+  type        = number
+  default     = 80
+}
+
+variable "ssh_port" {
+  description = "The port the server will use for SSH requests"
+  type        = number
+  default     = 22
+}
+
+# vi main.tf
+provider "aws" {
+  region = "ap-northeast-2"
+}
+
+resource "aws_instance" "example" {
+  ami                    = "ami-0fd0765afb77bcca7"
+  instance_type          = "t2.micro"
+  vpc_security_group_ids = [aws_security_group.instance.id]
+  key_name  = "new-key"
+  user_data = <<-EOF
+              #! /bin/bash
+              yum install -y httpd
+              systemctl enable --now httpd
+              echo "Hello, Terraform" > /var/www/html/index.html
+              EOF
+
+  tags = {
+    Name = "terraform-example"
+  }
+}
+
+resource "aws_security_group" "instance" {
+
+  name = var.security_group_name
+
+  ingress {
+    from_port   = var.http_port
+    to_port     = var.http_port
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  ingress {
+    from_port   = var.ssh_port
+    to_port     = var.ssh_port
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  ingress {
+    from_port   = -1
+    to_port     = -1
+    protocol    = "icmp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  tags = {
+    Name = "terraform-sg"
+  }
+}
+
+# vi outputs.tf
+output "public_ip" {
+  value       = aws_instance.example.public_ip
+  description = "The public IP of the Instance"
+}
+
+output "public_dns" {
+  value       = aws_instance.example.public_dns
+  description = "The Public dns of the Instance"
+}
+
+output "private_ip" {
+  value       = aws_instance.example.private_ip
+  description = "The Private_ip of the Instance"
+}
+
+# terraform init
+# terraform validate
+# terraform plan
+# terraform apply
+# terraform output public_ip
+# terraform destroy
+
+--- ec2 asg
+# vi variables.tf
+variable "instance_security_group_name" {
+  description = "The name of the security group for the EC2 Instances"
+  type        = string
+  default     = "terraform-example-instance"
+}
+
+variable "http_port" {
+  description = "The port the server will use for HTTP requests"
+  type        = number
+  default     = 80
+}
+
+variable "ssh_port" {
+  description = "The port the server will use for SSH requests"
+  type        = number
+  default     = 22
+}
+
+variable "alb_name" {
+  description = "The name of the ALB"
+  type        = string
+  default     = "terraform-asg-example"
+}
+
+variable "alb_security_group_name" {
+  description = "The name of the security group for the ALB"
+  type        = string
+  default     = "terraform-example-alb"
+}
+
+# vi main.tf
+provider "aws" {
+  region = "ap-northeast-2"
+}
+# 시작 구성에 대한 설정으로 시작 구성을 만들면서 인스턴스도 함께 생성한다.
+resource "aws_launch_configuration" "example" {
+  image_id        = "ami-0cbec04a61be382d9"
+  instance_type   = "t2.micro"
+  security_groups = [aws_security_group.instance.id]
+
+  user_data = <<-EOF
+              #! /bin/bash
+              yum install -y httpd
+              systemctl enable --now httpd
+              echo "Hello, Terraform" > /var/www/html/index.html
+              EOF
+
+  # Required when using a launch configuration with an auto scaling group.
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+# 오토 스케일링 그룹 설정
+# example는 명시적 이름으로 서비스가 다르면(autoscaling_group) 이름이 같아도 상관없다.
+resource "aws_autoscaling_group" "example" {
+  launch_configuration = aws_launch_configuration.example.name
+  vpc_zone_identifier  = data.aws_subnets.NEW-VPC.ids # 서브넷의 id들을 가져오기 때문에 복수형을 사용한다.
+
+  target_group_arns = [aws_lb_target_group.asg.arn]
+  health_check_type = "ELB"
+
+  min_size = 2
+  max_size = 4
+
+  tag {
+    key                 = "Name"
+    value               = "terraform-asg-example"
+    propagate_at_launch = true
+  }
+}
+
+resource "aws_security_group" "instance" {
+  name = var.instance_security_group_name
+
+  ingress {
+    from_port   = var.http_port
+    to_port     = var.http_port
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+data "aws_vpc" "NEW-VPC" {
+  default = true
+}
+
+data "aws_subnets" "NEW-VPC" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.NEW-VPC.id]
+  }
+}
+
+resource "aws_lb" "example" {
+
+  name               = var.alb_name
+
+  load_balancer_type = "application"
+  subnets            = data.aws_subnets.NEW-VPC.ids
+  security_groups    = [aws_security_group.alb.id]
+}
+
+resource "aws_lb_listener" "http" {
+  load_balancer_arn = aws_lb.example.arn
+  port              = var.http_port
+  protocol          = "HTTP"
+
+  # By default, return a simple 404 page
+  default_action {
+    type = "fixed-response"
+
+    fixed_response {
+      content_type = "text/plain"
+      message_body = "404: page not found"
+      status_code  = 404
+    }
+  }
+}
+
+resource "aws_lb_target_group" "asg" {
+
+  name = var.alb_name
+
+  port     = var.http_port
+  protocol = "HTTP"
+  vpc_id   = data.aws_vpc.NEW-VPC.id
+
+  health_check {
+    path                = "/"
+    protocol            = "HTTP"
+    matcher             = "200"
+    interval            = 15
+    timeout             = 3
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+  }
+}
+
+resource "aws_lb_listener_rule" "asg" {
+  listener_arn = aws_lb_listener.http.arn
+  priority     = 100
+
+  condition {
+    path_pattern {
+      values = ["*"]
+    }
+  }
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.asg.arn
+  }
+}
+
+resource "aws_security_group" "alb" {
+
+  name = var.alb_security_group_name
+
+  # Allow inbound HTTP requests
+  ingress {
+    from_port   = var.http_port
+    to_port     = var.http_port
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # Allow all outbound requests
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+# vi outputs.tf
+output "alb_dns_name" {
+  value       = aws_lb.example.dns_name
+  description = "The domain name of the load balancer"
+}
+
+# terraform init
+# terraform validate
+# terraform plan
+# terraform apply
+# terraform output alb_dns_name
+
+--- Azure CLI
+# echo -e "[azure-cli]
+name=Azure CLI
+baseurl=https://packages.microsoft.com/yumrepos/azure-cli
+enabled=1
+gpgcheck=1
+gpgkey=https://packages.microsoft.com/keys/microsoft.asc" | sudo tee /etc/yum.repos.d/azure-cli.repo
+
+# yum install -y azure-cli
+# az upgrade
+# az --version
+# az login
+# resourceGroup=VMTutorialResources
+# location=koreacentral
+# az group create --name $resourceGroup --location $location
+# vnetName=TutorialVNet1
+# subnetName=TutorialSubnet1
+# vnetAddressPrefix=10.133.0.0/16
+# subnetAddressPrefix=10.133.0.0/24
+# az network vnet create \
+--name $vnetName \
+--resource-group $resourceGroup \
+--address-prefixes $vnetAddressPrefix \
+--subnet-name $subnetName \
+--subnet-prefixes $subnetAddressPrefix
+
+# az vm image list
+# vmName=TutorialVM1
+# vi httpd.txt
+#!/bin/bash
+apt update
+apt install -y apache2
+echo "<h1>Hello Azure CLI</h1>" > /var/www/html/index.html
+
+# az vm create \
+--resource-group $resourceGroup \
+--name $vmName \
+--image UbuntuLTS \
+--vnet-name $vnetName \
+--subnet $subnetName \
+--size Standard_B1s \
+--custom-data httpd.txt \
+--admin-username azureuser \
+--generate-ssh-keys \
+--output json \
+--verbose
+
+# az network nsg rule create \
+--resource-group $resourceGroup \
+--nsg-name TutorialVM1NSG \
+--name myNetworkSecurityGroupRule \
+--protocol tcp \
+--priority 900 \
+--destination-port-range 80
+
+# az vm open-port -n $vmName -g $resourceGroup --protocol tcp --port 80
+# ssh -i .ssh/id_rsa azureuser@20.200.220.170
+# az vm delete --resource-group $resourceGroup --name $vmName --yes
+# az group delete -n $resourceGroup
+# az group delete -n NetworkWatcherRG
+
+--- Azure Terraform VM 생성
+# mkdir azure && cd $_
+# mkdir rg && cd $_
+
+1. 리소스 그룹 만들기
+# vi providers.tf
+terraform {
+
+  required_version = ">=0.12"
+  
+  required_providers {
+    azurerm = {
+      source = "hashicorp/azurerm"
+      version = "~>2.0"
+    }
+  }
+}
+
+provider "azurerm" {
+  features {}
+}
+
+# vi main.tf
+resource "random_pet" "rg-name" {
+  prefix    = var.resource_group_name_prefix
+}
+
+resource "azurerm_resource_group" "rg" {
+  name      = random_pet.rg-name.id
+  location  = var.resource_group_location
+}
+
+# vi variables.tf
+variable "resource_group_name_prefix" {
+  default       = "rg"
+  description   = "Prefix of the resource group name that's combined with a random ID so name is unique in your Azure subscription."
+}
+
+variable "resource_group_location" {
+  default = "koreacentral"
+  description   = "Location of the resource group."
+}
+
+# vi output.tf
+output "resource_group_name" {
+    value = azurerm_resource_group.rg.name
+}
+
+# terraform init
+# terraform plan -out main.tfplan
+# terraform apply main.tfplan
+# echo "$(terraform output resource_group_name)"
+# az group show --name rg-apt-crow
+# terraform plan -destroy -out main.destroy.tfplan
+# terraform apply main.destroy.tfplan
+
+2. VM 만들기
+# mkdir vm && cd $_
+# vi providers.tf
+terraform {
+
+  required_version = ">=0.12"
+
+  required_providers {
+    azurerm = {
+      source = "hashicorp/azurerm"
+      version = "~>2.0"
+    }
+  }
+}
+
+provider "azurerm" {
+  features {}
+}
+
+# vi main.tf
+resource "random_pet" "rg-name" {
+  prefix    = var.resource_group_name_prefix
+}
+
+resource "azurerm_resource_group" "rg" {
+  name      = random_pet.rg-name.id
+  location  = var.resource_group_location
+}
+
+# Create virtual network
+resource "azurerm_virtual_network" "myterraformnetwork" {
+  name                = "myVnet"
+  address_space       = ["10.0.0.0/16"]
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+}
+
+# Create subnet
+resource "azurerm_subnet" "myterraformsubnet" {
+  name                 = "mySubnet"
+  resource_group_name  = azurerm_resource_group.rg.name
+  virtual_network_name = azurerm_virtual_network.myterraformnetwork.name
+  address_prefixes     = ["10.0.1.0/24"]
+}
+
+# Create public IPs
+resource "azurerm_public_ip" "myterraformpublicip" {
+  name                = "myPublicIP"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  allocation_method   = "Dynamic"
+}
+
+# Create Network Security Group and rule
+resource "azurerm_network_security_group" "myterraformnsg" {
+  name                = "myNetworkSecurityGroup"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+
+  security_rule {
+    name                       = "SSH"
+    priority                   = 1001
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "22"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+  security_rule {
+    name                       = "HTTP"
+    priority                   = 1002
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "80"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+}
+
+# Create network interface
+resource "azurerm_network_interface" "myterraformnic" {
+  name                = "myNIC"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+
+  ip_configuration {
+    name                          = "myNicConfiguration"
+    subnet_id                     = azurerm_subnet.myterraformsubnet.id
+    private_ip_address_allocation = "Dynamic"
+    public_ip_address_id          = azurerm_public_ip.myterraformpublicip.id
+  }
+}
+
+# Connect the security group to the network interface
+resource "azurerm_network_interface_security_group_association" "example" {
+  network_interface_id      = azurerm_network_interface.myterraformnic.id
+  network_security_group_id = azurerm_network_security_group.myterraformnsg.id
+}
+
+# Generate random text for a unique storage account name
+resource "random_id" "randomId" {
+  keepers = {
+    # Generate a new ID only when a new resource group is defined
+    resource_group = azurerm_resource_group.rg.name
+  }
+
+  byte_length = 8
+}
+
+# Create storage account for boot diagnostics
+resource "azurerm_storage_account" "mystorageaccount" {
+  name                     = "diag${random_id.randomId.hex}"
+  location                 = azurerm_resource_group.rg.location
+  resource_group_name      = azurerm_resource_group.rg.name
+  account_tier             = "Standard"
+  account_replication_type = "LRS"
+}
+
+# Create (and display) an SSH key
+resource "tls_private_key" "example_ssh" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+
+# Create virtual machine
+resource "azurerm_linux_virtual_machine" "myterraformvm" {
+  name                  = "myVM"
+  location              = azurerm_resource_group.rg.location
+  resource_group_name   = azurerm_resource_group.rg.name
+  network_interface_ids = [azurerm_network_interface.myterraformnic.id]
+  size                  = "Standard_B1s"
+
+  os_disk {
+    name                 = "myOsDisk"
+    caching              = "ReadWrite"
+    storage_account_type = "Premium_LRS"
+  }
+
+  source_image_reference {
+    publisher = "Canonical"
+    offer     = "UbuntuServer"
+    sku       = "18.04-LTS"
+    version   = "latest"
+  }
+
+  computer_name                   = "myvm"
+  admin_username                  = "azureuser"
+  custom_data                     = filebase64("httpd-azure.txt")
+  disable_password_authentication = true
+
+  admin_ssh_key {
+    username   = "azureuser"
+    public_key = tls_private_key.example_ssh.public_key_openssh
+  }
+
+  boot_diagnostics {
+    storage_account_uri = azurerm_storage_account.mystorageaccount.primary_blob_endpoint
+  }
+}
+
+# vi variables.tf
+variable "resource_group_name_prefix" {
+  default       = "rg"
+  description   = "Prefix of the resource group name that's combined with a random ID so name is unique in your Azure subscription."
+}
+
+variable "resource_group_location" {
+  default       = "koreacentral"
+  description   = "Location of the resource group."
+}
+
+# vi output.tf
+output "resource_group_name" {
+  value = azurerm_resource_group.rg.name
+}
+
+output "public_ip_address" {
+  value = azurerm_linux_virtual_machine.myterraformvm.public_ip_address
+}
+
+output "tls_private_key" {
+  value     = tls_private_key.example_ssh.private_key_pem
+  sensitive = true
+}
+
+# terraform init
+# terraform plan -out main.tfplan
+# terraform apply main.tfplan
+# terraform output -raw tls_private_key > id_rsa
+# terraform output public_ip_address
+# ssh -i id_rsa azureuser@<public_ip_address>
+
+--- GCP CLI
+# tee -a /etc/yum.repos.d/google-cloud-sdk.repo << EOM
+[google-cloud-cli]
+name=Google Cloud CLI
+baseurl=https://packages.cloud.google.com/yum/repos/cloud-sdk-el8-x86_64
+enabled=1
+gpgcheck=1
+repo_gpgcheck=0
+gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg
+       https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+EOM
+
+# yum install -y google-cloud-cli
+# gcloud --version
+# gcloud init --console-only
+asia-northeast3-a
+# gcloud compute networks create my-vpc
+# gcloud compute networks subnets create my-subnet --network=my-vpc --range=10.233.0.0/16 --region=asia-northeast3
+# gcloud compute firewall-rules list
+# gcloud compute firewall-rules create my-vpc-allow-ssh --allow=tcp:22 --description="Allow incoming traffic on TCP port 22" --direction=INGRESS --network=my-vpc
+# gcloud compute images list
+# gcloud compute images describe centos-7-v20220621 \
+    --project=centos-cloud
+# gcloud compute machine-types list --filter="zone:( asia-northeast3-a )"
+# vi httpd-gcp.txt
+#! /bin/bash
+yum install -y httpd
+systemctl enable --now httpd
+cat <<EOF > /var/www/html/index.html
+<html><body><p>Linux startup script from a local file.</p></body></html>
+
+# gcloud compute instances create web01 \
+    --image=centos-7-v20220621 \
+    --image-project=centos-cloud \
+    --machine-type=e2-micro \
+    --network=my-vpc \
+    --subnet=my-subnet \
+    --tags http-server,https-server
+    --zone=asia-northeast3-a \
+    --metadata-from-file=startup-script=httpd-gcp.txt
+
+# gcloud compute instances describe web01
+# gcloud compute instances add-metadata web01 --metadata-from-file=key=id_rsa.pub
+
+--- Terraform GCP 네트워크 만들기
+# vi main.tf
+provider "google" {
+  credentials = file("instance.json")
+  project = "gcp-johnlee2022-352701"
+  region = "asia-northeast3"
+  zone = "asia-northeast3-a"
+}
+resource "google_compute_subnetwork" "network-with-private-ip-ranges" {
+  name          = "test-subnetwork"
+  ip_cidr_range = "10.2.0.0/16"
+  region        = "asia-northeast3"
+  network       = google_compute_network.custom-test.id
+}
+
+resource "google_compute_network" "custom-test" {
+  name                    = "test-network"
+  auto_create_subnetworks = false
+}
+
+--- Terraform GCP VM 만들기
+# vi main.tf
+provider "google" {
+  credentials = file("instance.json")
+  project = "gcp-johnlee2022-352701"
+  region = "asia-northeast3"
+  zone = "asia-northeast3-a"
+}
+resource "google_compute_instance" "default" {
+  name         = "vm-from-terraform"
+  machine_type = "e2-micro"
+  zone         = "asia-northeast3-a"
+
+  boot_disk {
+    initialize_params {
+      image = "debian-cloud/debian-9"
+    }
+  }
+
+  network_interface {
+    network = "my-vpc"
+    subnetwork = "my-subnet"
+
+    access_config {
+      // Include this section to give the VM an external ip address
+    }
+  }
+
+    metadata_startup_script = "apt-get update && apt-get install apache2 -y && cd /tmp && wget http://s3.iptime.org:65088/list/HDD1/gcp.tar && tar -xvf gcp.tar -C /var/www/html/"
+
+    // Apply the firewall rule to allow external IPs to access this instance
+    tags = ["http-server"]
+}
+
+resource "google_compute_firewall" "http-server" {
+  name    = "default-allow-http-terraform"
+  network = "my-vpc"
+
+  allow {
+    protocol = "tcp"
+    ports    = ["80"]
+  }
+
+  // Allow traffic from everywhere to instances with an http-server tag
+  source_ranges = ["0.0.0.0/0"]
+  target_tags   = ["http-server"]
+}
+
+output "ip" {
+  value = "${google_compute_instance.default.network_interface.0.access_config.0.nat_ip}"
+}
+
+--- Ansible

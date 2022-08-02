@@ -1,0 +1,317 @@
+--- 센토스 도커 설치
+
+# curl -fsSL https://get.docker.com/ | sh
+# yum -y install bash-completion wget unzip net-tools mysql telnet rdate
+# rdate -s time.bora.net && clock -w
+# curl https://raw.githubusercontent.com/docker/docker-ce/master/components/cli/contrib/completion/bash/docker -o /etc/bash_completion.d/docker.sh
+    # 자동완성 활성화
+# systemctl start docker && systemctl enable docker
+----- Docker을 설치함으로 인해 이제 도커 엔진 OR 도커 호스트라 부른다.
+--- 우분투 도커 설치
+
+$ sudo apt update
+$ sudo apt install -y apt-transport-https ca-certificates curl software-properties-common
+$ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+$ sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable"
+$ sudo apt update
+$ sudo apt-cache policy docker-ce
+$ sudo apt install -y docker-ce
+
+--- AWS 도커 설치
+
+#!/bin/bash
+timedatectl set-timezone Asia/Seoul
+cd /tmp
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+./aws/install
+amazon-linux-extras install docker -y # centos의 yum과 같은것으로 amazon-linux-extras를 사용해 aws에서 설치받는다.
+systemctl enable --now docker
+curl https://raw.githubusercontent.com/docker/docker-ce/master/components/cli/contrib/completion/bash/docker -o /etc/bash_completion.d/docker.sh
+usermod -a -G docker ec2-user
+    # ec2-user가 docker를 사용하기 위한 명령어로 적용이 안된다면 세션 재접속이 필요하다.
+docker run -d -p 80:80 --name=test-site clownpark/web-site:v1.0
+
+--- 도커 기본 명령어
+
+# docker search nginx
+# docker image pull nginx
+# docker image ls
+# docker image inspect --format="{{ .Os}}" nginx
+    # 이미지의 속성을 확인하며 --format를 통해 필터링해 os정보를 확인한다.
+    # format의 검색 형태는 .을통해 하위내용을 검색하면 처음 .은 최상위를 뜻한다.
+# docker container create -p 80:80 --name webserver nginx
+    # -p 옵션은 포트포워드로(publish) docker_host:container 의 형태이다.
+    # nginx 이미지로 컨테이너를 생성하며 생성한 컨테이너의 이름은 webserver이다.
+# docker container start webserver
+# docker container stop webserver#
+# docker container start webserver
+# docker container rm -f webserver
+# docker container run -p 80:80 --name webserver nginx # foreground
+# docker container run -d -p 80:80 --name webserver nginx # background
+# docker container run --name test_cal centos /bin/cal
+# docker container run -it --name test_bash centos /bin/bash
+# docker container run -d --name test_ping centos /bin/ping localhost
+# docker container logs -t test_ping
+# docker container run -d -p 8080:80 --name test_port nginx
+# docker container stats test_port
+# docker container run -d -p 8181:80 --cpus 1 --memory=256m --name test_resource nginx
+# docker container run -d -p 8282:80 --cpus 1 --memory=256m -v /tmp:/usr/share/nginx/html --name volume-container nginx 
+# docker container ls
+# docker container ls -a
+# docker container ls -a -f name=test_webserver
+# docker container ls -a -f exited=0
+# docker container ls -a --format "table {{.Names}}\t{{.Status}}"
+# docker container attach test_bash
+[root@1689b6318c35 /]# ctrl + p, ctrl +q 를 입력
+# docker container ls
+# docker container exec -it test_port /bin/echo "Hello world"
+# docker container exec -it test_port /bin/bash
+# docker container top test_port
+# docker container port test_port
+# docker container rename test_port webserver
+# docker container cp webserver:/usr/share/nginx/html/index.html /root/index.html
+# docker container cp ./index.html webserver:/usr/share/nginx/html/index.html
+# docker container diff webserver
+# docker container commit -a "johnlee<test@example.com>" -m "NICE TO MEET YOU" webserver test_commit:v1.0
+# docker image ls
+# docker image inspect test_commit:v1.0
+# docker image save -o test_commit.tar test_commit:v1.0
+# docker image load -i test_commit.tar
+# docker image ls
+# docker container run -d -p 80:80 --name webserver test_commit:v1.0
+# docker network ls
+# docker network ls -q --filter driver=bridge
+# docker network create -d bridge --subnet 192.168.123.0/24 --ip-range 192.168.123.0/24 test_bridge
+# docker network rm test_bridge
+# docker network connect test_bridge webserver
+# docker container inspect webserver
+# docker network disconnect test_bridge webserver
+# docker container run -d --name webserver1 --network test_bridge -p 8080:80 nginx
+# docker network inspect test_bridge
+
+--- 워드프레스
+- dbserver
+# docker run -d -p 3306:3306 --name dbserver \
+-e MYSQL_DATABASE=wordpress \
+-e MYSQL_USER=wpuser \
+-e MYSQL_PASSWORD=wppass \
+-e MYSQL_ROOT_PASSWORD=password --network test_bridge mariadb
+
+- webserver
+# docker run -it -d -p 8888:80 --name apache centos:7
+# docker exec -it apache bash
+yum install -y httpd php php-mysql php-gd php-mbstring wget unzip
+wget https://ko.wordpress.org/wordpress-4.8.2-ko_KR.zip
+cd /var/www/html
+unzip /wordpress-4.8.2-ko_KR.zip
+chown -R apache:apache wordpress
+httpd &
+
+--- 도커 파일 이해
+# vi Dockerfile
+FROM ubuntu:18.04
+MAINTAINER johnlee
+LABEL "name"="webserver"
+ENV aloha=date
+ENV path=/var/www/html
+RUN sed -i 's/archive.ubuntu.com/ftp.daumkakao.com/g' /etc/apt/sources.list
+RUN apt-get update
+RUN apt-get install apache2 -y
+COPY nihao /var/www/html/nihao
+COPY hello.html $path
+ADD aws.tar /var/www/html
+WORKDIR /var/www/html
+RUN echo ohayo >> ohayo.html
+VOLUME /var/www/html
+EXPOSE 80
+ENTRYPOINT ["apachectl"]
+CMD ["-D", "FOREGROUND"]
+
+# docker build -t clownpark/hello:v1.0 .
+    # 기본 파일 규칙이름으로 생성했기 때문에 .만 사용해도 Dockerfile을 찾아서 빌드할 수 있다.
+# docker push clownpark/hello:v1.0
+# docker run -d -P --name hello clownpark/hello:v1.0
+
+- 도커파일
+# tar cvf test.tar images index.html 
+# mkdir homepage && cd $_
+# vi Dockerfile
+FROM nginx:latest
+ADD test.tar /usr/share/nginx/html
+CMD ["nginx", "-g", "daemon off;"]
+    # 도커 이미지가 컨테이너로 변경되는 순간 실행된다.
+
+- wordpress dockerfile
+# mkdir wordpress && cd $_
+# vi Dockerfile
+FROM centos:7
+MAINTAINER itssp0405@gmail.com
+RUN yum install -y httpd php php-mysql php-gd php-mbstring wget unzip
+RUN wget https://ko.wordpress.org/wordpress-4.8.2-ko_KR.zip
+WORKDIR /var/www/html
+RUN unzip /wordpress-4.8.2-ko_KR.zip
+RUN mv wordpress/* ./
+RUN chown -R apache:apache ../
+CMD httpd -DFOREGROUND
+# docker image build -t clownpark/wordpress:v1.0 .
+# docker run -d -p 80:80 --name wordpress --network test_bridge clownpark/wordpress:v1.0 
+
+--- 도커 데이터 관리
+- Bind Mount
+# mkdir volume && cd $_
+# mkdir bm01 ; touch bm01/test.txt
+# docker container run -itd --name bm-test -v /root/volume/bm01:/mnt centos:7
+# docker container exec bm-test ls /mnt
+
+- Volume
+# docker volume create my-vol01
+# docker volume list
+# docker volume inspect my-vol01
+"Mountpoint": "/var/lib/docker/volumes/my-vol01/_data"
+# docker container run -itd --name vol-test -v my-vol01:/mnt centos:7
+# docker container run -itd -p 801:80 --name vol-web -v my-vol01:/usr/local/apache2/htdocs:ro httpd:latest
+    # ro는 read only
+# curl 192.168.0.151:801
+<html><body><h1>It works!</h1></body></html>
+# docker container exec vol-test sh -c "echo "Nihao" > /mnt/index.html"
+# curl 192.168.0.151:801
+Nihao
+
+--- 도커 네트워크 관리
+# docker network list
+# docker network inspect bridge
+"com.docker.network.bridge.name": "docker0",
+# docker network create new-net --subnet 172.31.0.0/16 --ip-range 172.31.0.0/20 --gateway 172.31.0.20
+# docker network list
+
+--- onbuild 명령어 활용
+
+--- 운영자 역할
+# mkdir onbuild && cd $_
+# vi Dockerfile.base
+FROM ubuntu:18.04
+RUN sed -i 's/archive.ubuntu.com/ftp.daumkakao.com/g' /etc/apt/sources.list
+RUN apt-get -y update
+RUN apt-get -y install nginx
+EXPOSE 80
+ONBUILD ADD website*.tar /var/www/html/
+CMD ["nginx", "-g", "daemon off;"]
+
+# docker build -t clownpark/web-base:v1.0 -f Dockerfile.base .
+# docker login
+# docker push clownpark/web-base:v1.0
+# vi Dockerfile
+FROM clownpark/web-base:v1.0
+
+--- 개발자 역할
+# mkdir onbuild && cd $_
+# ls
+website.tar
+Dockerfile
+
+# docker build -t clownpark/web-site:v1.0 .
+# docker run -d -p 80:80 --name=site clownpark/web-site:v1.0
+# docker login
+# docker push clownpark/web-site:v1.0
+
+--- 운영자 역할(AWS)
+# docker run -d -p 80:80 --name=test-site clownpark/web-site:v1.0
+
+--- 도커 사설 레지스트리
+
+# docker run -d -p 5000:5000 --restart=always --name private-docker-registry registry # 저장소 서버
+# vi /etc/docker/daemon.json # 클라이언트
+{ "insecure-registries":["13.124.122.222:5000"] }
+# systemctl restart docker
+
+--- 도커 컴포즈
+
+# curl -L "https://github.com/docker/compose/releases/download/1.26.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+# chmod +x /usr/local/bin/docker-compose
+# mkdir my_wordpress && cd $_
+# vi docker-compose.yml
+version: '3.3'
+services:
+   db:
+       image: mysql:5.7
+       volumes:
+           - ./mysql:/var/lib/mysql
+       restart: always
+       environment:
+          MYSQL_ROOT_PASSWORD: wordpress
+          MYSQL_DATABASE: wordpress
+          MYSQL_USER: wordpress
+          MYSQL_PASSWORD: wordpress
+   wordpress: 
+        depends_on: 
+            - db 
+        image: wordpress:latest
+        ports:
+          - "8888:80" 
+        restart: always 
+        environment: 
+            WORDPRESS_DB_HOST: db:3306 
+            WORDPRESS_DB_USER: wordpress 
+            WORDPRESS_DB_PASSWORD: wordpress 
+            WORDPRESS_DB_NAME: wordpress 
+        volumes:
+            - ./html:/var/www/html
+
+# docker-compose up -d
+# docker-compose ps
+# docker-compose pause
+# docker-compose unpause
+# docker-compose port web 5000
+# docker-compose config
+# docker-compose rm
+# docker-compose down
+# docker-compose down --rmi all
+
+--- 도커 스웜
+
+# firewall-cmd --permanent --zone=public --add-port=2377/tcp
+# firewall-cmd --reload
+# hostnamectl set-hostname master1
+
+# cat <<EOF >> /etc/hosts
+172.25.0.136 master1
+172.25.0.140 worker1
+172.25.0.141 worker2
+EOF
+
+# docker swarm init --advertise-addr 172.25.0.137
+# docker swarm join --token SWMTKN-1-0vkdjidcs2fmu7wn8nltkyidkpad4h0nrrknukqu0vymxlsv6z-dblxviuzbpet21peke80foobo 172.25.0.136:2377
+# docker node ls
+# docker service create --name my_web --replicas 3 
+--publish published=8080,target=80 nginx
+
+# docker service create --replicas 1 --name helloworld alpine ping docker.com
+# docker service ls
+# docker service ps helloworld
+# docker service inspect --pretty helloworld
+# docker service scale helloworld=5
+# docker service ps helloworld
+# docker service rm helloworld
+
+--- 롤링 업데이트
+
+# docker service create --replicas 3 --name redis --update-delay 10s redis:3.0.6
+# docker service ps redis
+# docker service inspect --pretty redis
+# docker service update --image redis:3.0.7 redis redis
+# docker service ps redis
+
+--- 클러스터에서 특정 노드 드레인하기
+
+# docker node ls
+# docker service rm redis
+# docker service create --replicas 3 --name redis --update-delay 10s redis:3.0.6
+# docker service ps redis
+# docker node update --availability drain worker1
+# docker node inspect --pretty worker1
+# docker service ps redis
+# docker node update --availability active worker1
+# docker node inspect --pretty worker1
+# docker node ls
+

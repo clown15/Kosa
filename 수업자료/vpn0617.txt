@@ -1,0 +1,136 @@
+--- route53(GSLB 구현)
+--- AWS VPN 연결(하이브리드 클라우드 구현)
+--- AWS Storage Gateway(온프레미스 애플리케이션에 사실상 무제한의 클라우드 스토리지 액세스 제공)
+
+--- AWS VPN 설정
+고객게이트웨이
+가상 프라이빗 게이트웨이
+
+사이트 간 VPN 연결
+정적 라우팅 192.168.0.0/21
+로컬 IPv4 네트워크 CIDR
+192.168.0.0/21
+원격 IPv4 네트워크 CIDR
+172.31.0.0/16
+구성다운로드
+
+라우팅 테이블
+192.168.0.0/21	vgw-01841bd5f4180dcbb
+172.31.0.0/16	local
+0.0.0.0/0	igw-0615aa4e569769057
+---
+Libreswan은 "IPsec" 및 인터넷 키 교환 ( "IKE" ) 을 사용하여 가장 널리 지원되고 표준화된 VPN 프로토콜의 무료 소프트웨어 구현입니다 . 이러한 표준은 IETF ( Internet Engineering Task Force )에서 생성 및 유지 관리합니다.
+
+dnf install -y libreswan
+systemctl enable --now ipsec
+
+# vi /etc/sysctl.conf
+net.ipv4.ip_forward = 1
+net.ipv4.conf.all.accept_redirects = 0
+net.ipv4.conf.default.accept_redirects = 0
+net.ipv4.conf.all.send_redirects = 0
+net.ipv4.conf.default.rp_filter = 0
+net.ipv4.conf.default.accept_source_route = 0
+net.ipv4.conf.default.send_redirects = 0
+net.ipv4.icmp_ignore_bogus_error_responses = 1
+net.ipv6.conf.all.disable_ipv6 = 1
+net.ipv6.conf.default.disable_ipv6 = 1
+
+-----------터미널에서 실행---------------
+for vpn in /proc/sys/net/ipv4/conf/*;
+do echo 0 > $vpn/accept_redirects;
+echo 0 > $vpn/send_redirects;
+done
+--------------------------------------
+
+sysctl -p
+
+left = 학원
+right = AWS
+
+# vi /etc/ipsec.d/aws.conf
+conn Tunnel1
+        authby=secret
+        auto=start
+        left=%defaultroute
+	leftid=123.142.252.25
+	right=3.37.196.145
+        type=tunnel
+        ikelifetime=8h
+        keylife=1h
+        phase2alg=aes128-sha1;modp1024
+        ike=aes128-sha1;modp1024
+        keyingtries=%forever
+        keyexchange=ike
+	leftsubnet=192.168.0.0/20
+	rightsubnet=10.21.0.0/16
+        dpddelay=10
+        dpdtimeout=30
+        dpdaction=restart_by_peer
+        overlapip=yes
+
+conn Tunnel2
+        authby=secret
+        auto=start
+        left=%defaultroute
+	leftid=123.142.252.25
+	right=52.78.45.66
+        type=tunnel
+        ikelifetime=8h
+        keylife=1h
+        phase2alg=aes128-sha1;modp1024
+        ike=aes128-sha1;modp1024
+        keyingtries=%forever
+        keyexchange=ike
+	leftsubnet=192.168.0.0/20
+	rightsubnet=10.21.0.0/16
+        dpddelay=10
+        dpdtimeout=30
+        dpdaction=restart_by_peer
+        overlapip=yes
+
+vi /etc/ipsec.d/aws.secrets
+123.142.252.25 3.37.196.145: PSK "j1qx7WUtUthcJ2pj18VH1OEtKREpMrSV"
+123.142.252.25 52.78.45.66: PSK "uECcjsG.mm9GjEVjKg2QRhvIDCmLkEOd"
+
+[연결하려는곳(openstack) IP] [AWS IP] : [KEY]의 형태로 다운받은 구성에 기록되어 있다.
+
+systemctl restart ipsec
+
+
+아래와 같이 AWS와 온 프레미스 환경이 통신 할 수 있다.
+sudo mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport 172.31.6.162:/ efs
+mysql -h 172.31.28.207 -u admin	-p
+
+---
+IKE란 ISAKMP와 IPSec에서 사용되는 키 관리 프로토콜이다. IKE는 상호 개체간에 인증된 보안
+통신 채널을 생성한다.
+이 과정을 수행하기 위해서는 상호간에 서로를 인증하고 필요한 키를 교환해야 한다. IKE를 통
+한 협상 과정은 IKE 1단계(ISAKMP SA-Security Association)와 IKE 2단계(IPSec SA)로 구성된
+다. 이렇게 두단계의 SA가 생성되면 두 개체간에 전송되는 패킷들은 IPSec을 통하여 암호화와
+인증 기능을 보장받게 된다
+
+---
+# 연결 설정 기본값으로, 다른 connection에게 상속된다.
+conn %default
+	ikelifetime=1440m	# IKE Phase 1의 수명으로, 기본 1일.
+	keylife=60m		# IKE Phase 2의 수명으로, 기본 1시간.
+	rekeymargin=3m		# Phase 1 및 2의 SA 만료 전 n분에 SA 협상을 실행.
+	authby=secret
+
+# ASA 연결을 위한 connection 추가
+conn ASA
+	left=100.10.10.1		# SWAN의 외부 주소.
+	leftsubnet=192.168.0.0/24	# SWAN 내부 네트워크.
+	leftid=100.10.10.1		# SWAN의 식별자.
+	right=100.10.10.2		# ASA의 외부 주소.
+	rightsubnet=192.168.1.0/24	# ASA 내부 네트워크.
+	rightid=100.10.10.2		# ASA의 식별자.
+	auto=add			# SWAN 실행 시 해당 conn을 로드하고 연결 대기.
+	ike=aes128-sha1-modp1536	# 보안 매개변수.
+	esp=aes128-sha1			# 터널 모드이므로 esp.
+	keyexchange=ikev2		# Phase 1에서 IKEv2 사용.
+
+---
+
+https://libreswan.org/man/ipsec.conf.5.html

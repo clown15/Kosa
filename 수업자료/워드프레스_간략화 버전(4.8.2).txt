@@ -1,0 +1,29 @@
+// MariaDB 설치
+$ sudo apt-get update -y
+$ sudo apt-get install -y mariadb-server unzip nfs-common
+$ sudo mysql_secure_installation
+$ sudo vi /etc/mysql/mariadb.conf.d/50-server.cnf
+#bind-address            = 127.0.0.1
+
+$ sudo systemctl restart mysql
+$ sudo mysql -u root -p
+CREATE USER 'wpuser'@'%' IDENTIFIED BY 'wppass';
+CREATE DATABASE IF NOT EXISTS wordpress;
+GRANT ALL PRIVILEGES ON wordpress.* TO 'wpuser'@'%';
+quit
+
+// 웹서버 설치
+#!/bin/bash
+setenforce 0
+sed -i 's/^SELINUX=enforcing$/SELINUX=disabled/' /etc/selinux/config or /etc/sysconfig/selinux
+yum install -y httpd php php-mysql php-gd php-mbstring wget unzip
+cd /home/centos
+wget http://192.168.0.122:8080/v1/AUTH_2afa315ed048438f956c63e48f4821e2/files/wordpress-4.8.2-ko_KR.zip
+cd /var/www/html
+unzip /home/centos/wordpress-4.8.2-ko_KR.zip
+mv ./wordpress/* ./
+chown -R apache:apache /var/www/*
+systemctl enable --now httpd
+
+웹브라우저 http://blog.alibaba9.shop/wordpress
+

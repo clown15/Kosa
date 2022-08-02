@@ -1,0 +1,77 @@
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: gp2
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+provisioner: kubernetes.io/aws-ebs
+parameters:
+  type: gp2
+  fsType: ext4 
+
+aws ec2 create-volume --availability-zone=ap-northeast-2a --size=1 --volume-type=gp2
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-aws
+spec:
+  capacity:
+    storage: 1Gi
+  persistentVolumeReclaimPolicy: Retain
+  accessModes:
+    - ReadWriteOnce
+  awsElasticBlockStore:
+    fsType: ext4
+    volumeID: vol-00b4ff509c765e22f
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-aws
+  namespace: default
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-aws
+  namespace: default
+spec:
+  containers:
+    - name: test
+      image: nginx
+      volumeMounts:
+        - mountPath: "/tmp"
+          name: pvc
+  nodeName: ip-10-33-0-232.ap-northeast-2.compute.internal
+  volumes:
+    - name: pvc
+      persistentVolumeClaim:
+        claimName: pvc-aws
+
+---
+aws ec2 create-volume --availability-zone=ap-northeast-2a --size=1 --volume-type=gp2
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-ebs
+spec:
+  containers:
+  - image: k8s.gcr.io/test-webserver
+    name: test-container
+    volumeMounts:
+    - mountPath: /test-ebs
+      name: test-volume
+  volumes:
+  - name: test-volume
+    # This AWS EBS volume must already exist.
+    awsElasticBlockStore:
+      volumeID: "vol-07981dbffa5025609"
+      fsType: ext4

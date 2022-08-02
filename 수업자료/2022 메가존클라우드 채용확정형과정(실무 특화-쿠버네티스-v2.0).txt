@@ -1,0 +1,1569 @@
+--- Kubernetes
+
+- Minikube 설치(Single Node: Master Node + Worker Node), (Multi Node: Master Node, Worker Node)
+# curl -fsSL https://get.docker.com/ | sudo sh
+# systemctl enable --now docker
+# yum install -y conntrack git
+# curl -Lo minikube https://storage.googleapis.com/minikube/releases/v1.23.2/minikube-linux-amd64 && chmod +x minikube
+# mkdir -p /usr/local/bin/
+# install minikube /usr/local/bin/
+# minikube version
+# minikube start --driver=none
+# minikube status
+
+- kubectl 설치
+# curl -LO https://dl.k8s.io/release/v1.22.2/bin/linux/amd64/kubectl
+# install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+# source <(kubectl completion bash)
+# echo "source <(kubectl completion bash)" >> ~/.bashrc
+# exit
+# kubectl version
+
+--- Pod
+# mkdir workspace && cd $_
+# kubectl get node
+# kubectl run nginx-pod --image=nginx
+# kubectl expose pod nginx-pod --name clusterip --type=ClusterIP --port 80
+# kubectl expose pod nginx-pod --name nodeport --type=NodePort --port 80
+# kubectl expose pod nginx-pod --name loadbalancer --type=LoadBalancer --external-ip 13.125.160.205 --port 80
+# kubectl get pod
+# kubectl get service
+# kubectl exec -it nginx-pod -- bash
+# kubectl get all
+# kubectl delete svc --all
+# kubectl delete pod nginx-pod
+
+--- Service
+# vi nginx-pod.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-pod
+  labels:
+    app: nginx-pod
+spec:
+  containers:
+  - name: nginx-pod-container
+    image: nginx
+
+# kubectl apply -f nginx-pod.yaml
+# kubectl get pod -o wide
+# kubectl describe pod nginx-pod
+
+# vi clusterip-pod.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: clusterip-service-pod
+spec:
+  type: ClusterIP
+  selector:
+    app: nginx-pod
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+
+# kubectl apply -f clusterip-pod.yaml
+# kubectl get svc -o wide
+# kubectl describe svc clusterip-service-pod
+# kubectl edit svc clusterip-service-pod
+
+# vi nodeport-pod.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: nodeport-service-pod
+spec:
+  type: NodePort
+  selector:
+    app: nginx-pod
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80 # 컨테이너 포트가 맞다.
+    nodePort: 30080
+# kubectl apply -f nodeport-pod.yaml
+# kubectl get svc -o wide
+# kubectl describe svc nodeport-service-pod
+# kubectl edit svc nodeport-service-pod
+
+# vi loadbalancer-pod.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: loadbalancer-service-pod
+spec:
+  type: LoadBalancer
+  externalIPs:
+  - 192.168.56.119
+  selector:
+    app: nginx-pod
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+# kubectl apply -f loadbalancer-pod.yaml
+# kubectl get svc -o wide
+# kubectl describe svc loadbalancer-service-pod
+
+--- ReplicaSet
+# vi replicaset.yaml
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: nginx-replicaset
+spec:
+  replicas: 3 # desired state (kube-controller-manager)
+  selector:
+    matchLabels:
+      app: nginx-replicaset
+
+  template:
+    metadata:
+      name: nginx-replicaset
+      labels:
+        app: nginx-replicaset
+    spec:
+      containers:
+      - name: nginx-replicaset-container
+        image: nginx
+        ports:
+        - containerPort: 80
+
+# kubectl apply -f replicaset.yaml
+# kubectl get replicasets.apps -o wide
+# kubectl describe replicasets.apps nginx-replicaset
+
+# vi clusterip-replicaset.yaml # 클러스터아이피 야믈
+apiVersion: v1
+kind: Service
+metadata:
+  name: clusterip-service-replicaset
+spec:
+  type: ClusterIP
+  selector:
+    app: nginx-replicaset
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+
+# kubectl apply -f clusterip-replicaset.yaml
+# kubectl get svc -o wide
+# kubectl describe svc clusterip-service-replicaset
+
+# vi nodeport-replicaset.yaml # 노드포트 야믈
+apiVersion: v1
+kind: Service
+metadata:
+  name: nodeport-service-replicaset
+spec:
+  type: NodePort
+  selector:
+    app: nginx-replicaset
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+    nodePort: 30080
+
+# kubectl apply -f nodeport-replicaset.yaml
+# kubectl get svc -o wide
+# kubectl describe svc nodeport-service-replicaset
+
+# vi loadbalancer-replicaset.yaml # 로드밸런서 야믈
+apiVersion: v1
+kind: Service
+metadata:
+  name: loadbalancer-service-replicaset
+spec:
+  type: LoadBalancer
+  externalIPs:
+    - 172.25.0.137
+  selector:
+    app: nginx-replicaset
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+
+# kubectl apply -f loadbalancer-replicaset.yaml
+# kubectl get svc -o wide
+# kubectl describe svc loadbalancer-service-replicaset
+
+--- Deployment
+# vi deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx-deployment
+  template:
+    metadata:
+      name: nginx-deployment
+      labels:
+        app: nginx-deployment
+    spec:
+      containers:
+      - name: nginx-deployment-container
+        image: nginx
+        ports:
+        - containerPort: 80
+
+# kubectl apply -f deployment.yaml
+# kubectl get deployments.apps -o wide
+# kubectl describe deployments.apps nginx-deployment
+
+# vi clusterip-deployment.yaml # 클러스터아이피 야믈
+apiVersion: v1
+kind: Service
+metadata:
+  name: clusterip-service-deployment
+spec:
+  type: ClusterIP
+  selector:
+    app: nginx-deployment
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+
+# kubectl apply -f clusterip-deployment.yaml
+# kubectl get svc -o wide
+# kubectl describe svc clusterip-service-deployment
+
+# vi nodeport-deployment.yaml # 노드포트 야믈
+apiVersion: v1
+kind: Service
+metadata:
+  name: nodeport-service-deployment
+spec:
+  type: NodePort
+  selector:
+    app: nginx-deployment
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+    nodePort: 30080
+
+# kubectl apply -f nodeport-deployment.yaml
+# kubectl get svc -o wide
+# kubectl describe svc nodeport-service-deployment
+
+# vi loadbalancer-deployment.yaml # 로드밸런서 야믈
+apiVersion: v1
+kind: Service
+metadata:
+  name: loadbalancer-service-deployment
+spec:
+  type: LoadBalancer
+  externalIPs:
+  - 192.168.0.143
+  selector:
+    app: nginx-deployment
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+# kubectl apply -f loadbalancer-deployment.yaml
+# kubectl get svc -o wide
+# kubectl describe svc loadbalancer-service-deployment
+
+# kubectl get all
+# kubectl delete pod,svc --all
+# kubectl delete replicaset,svc --all
+# kubectl delete deployment,svc --all
+
+- Deployment 롤링 업데이트 제어
+
+# kubectl set image deployment.apps/nginx-deployment nginx-deployment-container=nginx:1.9.1
+# kubectl get all
+# kubectl rollout history deployment nginx-deployment
+# kubectl rollout history deployment nginx-deployment --revision=2 # 리비전2 상세보기
+# kubectl rollout undo deployment nginx-deployment # 롤백(전 단계로 복원)
+# kubectl get all
+# kubectl rollout history deployment nginx-deployment
+# kubectl rollout history deployment nginx-deployment --revision=3 # 리비전3 상세보기
+
+
+--- All Node ---
+# cat <<EOF >> /etc/hosts
+192.168.0.192 master1
+192.168.0.145 worker1
+192.168.0.146 worker2
+EOF
+
+# hostnamectl set-hostname master
+# curl https://download.docker.com/linux/centos/docker-ce.repo -o /etc/yum.repos.d/docker-ce.repo
+# sed -i -e "s/enabled=1/enabled=0/g" /etc/yum.repos.d/docker-ce.repo
+# yum --enablerepo=docker-ce-stable -y install docker-ce-19.03.15-3.el7
+# mkdir /etc/docker
+# cat <<EOF | sudo tee /etc/docker/daemon.json
+{
+  "exec-opts": ["native.cgroupdriver=systemd"],
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "100m"
+  },
+  "storage-driver": "overlay2"
+}
+EOF
+# systemctl enable --now docker
+# systemctl daemon-reload
+# systemctl restart docker
+# systemctl disable --now firewalld
+# setenforce 0
+# sed -i 's/^SELINUX=enforcing$/SELINUX=disabled/' /etc/selinux/config
+
+# swapoff -a
+# sed -i '/ swap / s/^/#/' /etc/fstab
+
+# cat <<EOF > /etc/sysctl.d/k8s.conf
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+EOF
+
+# sysctl --system
+# reboot
+
+# cat <<'EOF' > /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-$basearch
+enabled=1
+gpgcheck=0
+repo_gpgcheck=0
+gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+EOF
+
+# yum -y install kubeadm-1.19.16-0 kubelet-1.19.16-0 kubectl-1.19.16-0 --disableexcludes=kubernetes
+# systemctl enable kubelet
+
+--- Master ---
+# kubeadm init --apiserver-advertise-address=192.168.56.101 --pod-network-cidr=10.244.0.0/16
+# mkdir -p $HOME/.kube
+# cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+# chown $(id -u):$(id -g) $HOME/.kube/config
+# kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
+  서로 다른 노드에 있는 pod 간 통신을 위한 network plugin중 하나로 flannel을 설치한다.
+
+# kubectl get pods --all-namespaces
+# source <(kubectl completion bash)
+# cat <<EOF >> ~/.bashrc
+source <(kubectl completion bash)
+alias k=kubectl
+complete -F __start_kubectl k
+EOF
+# source ~/.bashrc
+
+--- Node ---
+# kubeadm join 192.168.56.101:6443 --token 7jth9b.h5g9c724dgbmg4yi \
+    --discovery-token-ca-cert-hash sha256:157960fbf59064f1c9b504d20e7143bd23d2eca3af4487d1857a5ee7381bf474
+# kubectl get nodes
+
+--- Ingress
+# git clone https://github.com/hali-linux/_Book_k8sInfra.git
+# kubectl apply -f /root/_Book_k8sInfra/ch3/3.3.2/ingress-nginx.yaml
+# kubectl get pods -n ingress-nginx
+# mkdir ingress && cd $_
+# vi ingress-deploy.yaml
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: foods-deploy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: foods-deploy
+  template:
+    metadata:
+      labels:
+        app: foods-deploy
+    spec:
+      containers:
+      - name: foods-deploy
+        image: halilinux/test-home:v1.0
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: foods-svc
+spec:
+  type: ClusterIP
+  selector:
+    app: foods-deploy
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sales-deploy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sales-deploy
+  template:
+    metadata:
+      labels:
+        app: sales-deploy
+    spec:
+      containers:
+      - name: sales-deploy
+        image: halilinux/test-home:v2.0
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sales-svc
+spec:
+  type: ClusterIP
+  selector:
+    app: sales-deploy
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: home-deploy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: home-deploy
+  template:
+    metadata:
+      labels:
+        app: home-deploy
+    spec:
+      containers:
+      - name: home-deploy
+        image: halilinux/test-home:v0.0
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: home-svc
+spec:
+  type: ClusterIP
+  selector:
+    app: home-deploy
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+
+# kubectl apply -f ingress-deploy.yaml
+# kubectl get all
+# vi ingress-config.yaml
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: ingress-nginx
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /foods
+        backend:
+          serviceName: foods-svc
+          servicePort: 80
+      - path: /sales
+        backend:
+          serviceName: sales-svc
+          servicePort: 80
+      - path:
+        backend:
+          serviceName: home-svc
+          servicePort: 80
+
+# kubectl apply -f ingress-config.yaml
+
+# vi ingress-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-ingress-controller
+  namespace: ingress-nginx
+spec:
+  ports:
+  - name: http
+    protocol: TCP
+    port: 80
+    targetPort: 80
+  - name: https
+    protocol: TCP
+    port: 443
+    targetPort: 443
+  selector:
+    app.kubernetes.io/name: ingress-nginx
+  type: LoadBalancer
+  externalIPs:
+  - 192.168.2.0
+
+# kubectl apply -f ingress-service.yaml
+
+--- multi-container
+# vi multipod.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: multipod
+spec:
+  containers:
+  - name: nginx-container        #1번째 컨테이너
+    image: nginx:1.14
+    ports:
+    - containerPort: 80
+  - name: centos-container       #2번째 컨테이너
+    image: centos:7
+    command:
+    - sleep
+    - "10000"
+  imagePullSecrets:
+  - name: docker-user
+ 
+# vi wordpress-pod-svc.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: wordpress-pod
+  labels:
+    app: wordpress-pod
+spec:
+  containers:
+  - name: mysql-container
+    image: mysql:5.7
+    env:
+    - name: MYSQL_ROOT_HOST
+      value: '%' # wpuser@% = 0.0.0.0/0
+    - name: MYSQL_ROOT_PASSWORD
+      value: kosa0401
+    - name: MYSQL_DATABASE
+      value: wordpress
+    - name: MYSQL_USER
+      value: wpuser
+    - name: MYSQL_PASSWORD
+      value: wppass
+    ports:
+    - containerPort: 3306
+    command:
+    - sleep
+    - "60"
+  - name: wordpress-container
+    image: wordpress
+    env:
+    - name: WORDPRESS_DB_HOST
+      value: wordpress-pod:3306 # 같은 pod안에 있는 컨테이너들은 localhost를 통해서 통신 가능하며 pod의 이름을 도메인처럼 사용할 수 있다.
+    - name: WORDPRESS_DB_USER
+      value: wpuser
+    - name: WORDPRESS_DB_PASSWORD
+      value: wppass 
+    - name: WORDPRESS_DB_NAME
+      value: wordpress
+    ports:
+    - containerPort: 80
+  imagePullSecrets:
+  - name: docker-user
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: loadbalancer-service-deployment-wordpress
+spec:
+  type: LoadBalancer
+  externalIPs:
+  - 192.168.56.101
+  selector:
+    app: wordpress-pod
+  ports:
+  - protocol: TCP
+    port: 80
+
+
+
+--- metallb (DHCP)
+# git clone https://github.com/hali-linux/_Book_k8sInfra.git
+# kubectl apply -f /root/_Book_k8sInfra/ch3/3.3.4/metallb.yaml
+# kubectl get pods -n metallb-system -o wide
+# vi metallb-l2config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: metallb-system
+  name: config
+data:
+  config: |
+    address-pools:
+    - name: nginx-ip-range
+      protocol: layer2
+      addresses:
+      - 192.168.56.200-192.168.56.250
+
+# kubectl apply -f metallb-l2config.yaml
+# kubectl describe configmaps -n metallb-system
+
+# vi metallb-test.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-pod
+  labels:
+    app: nginx-pod
+spec:
+  containers:
+  - name: nginx-pod-container
+    image: nginx
+  imagePullSecrets:
+  - name: docker-user
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: loadbalancer-service-pod
+spec:
+  type: LoadBalancer
+#  externalIPs:
+#  -
+  selector:
+    app: nginx-pod
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+
+# kubectl apply -f metallb-test.yaml
+
+--- Volume
+- pv/pvc
+# vi pv-pv-pvc-pod.yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: task-pv-volume
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 10Mi
+  accessModes:
+    - ReadWriteOnce # 하나의 노드만이 읽기/쓰기 가능 = RWO | ReadWriteMany - 여러 노드가 읽기/쓰기 가능, ReadOnlyMany
+  persistentVolumeReclaimPolicy: Recycle # delete는 클라우드에서 작동하고 퍼블릭 클라우드에선 기본 값이 delete다. 온프레미스와 VM상에서 사용시 Recycle를 사용한다.
+  hostPath:
+    path: "/mnt/data"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim # pv 요청
+metadata:
+  name: task-pv-claim
+spec: # pv를 사용하기 때문에 pv에 설정한 내용과 동기를 맞춘다.
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Mi # pv에서 사용할 공간 선언
+  selector:
+    matchLabels:
+      type: local
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: task-pv-pod
+  labels:
+    app: task-pv-pod
+spec:
+  containers:
+    - name: task-pv-container
+      image: nginx
+      ports:
+        - containerPort: 80
+          name: "http-server"
+      volumeMounts: # 자체 볼륨이 아닌 외부의 볼륨과 공유
+        - mountPath: "/usr/share/nginx/html"
+          name: task-pv-storage # 아래 volumes의 name을통해 연결하게 된다.
+  volumes:
+    - name: task-pv-storage
+      persistentVolumeClaim:
+        claimName: task-pv-claim
+
+# yum install -y nfs-utils.x86_64 # mount -t nfs
+# mkdir /nfs_shared
+# chmod 777 /nfs_shared
+# echo '/nfs_shared 192.168.0.0/20(rw,sync,no_root_squash)' >> /etc/exports
+# systemctl enable --now nfs
+# vi nfs-pv.yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nfs-pv
+spec:
+  capacity:
+    storage: 100Mi # NFS는 전체 크기로 잡히기 때문에 큰 의미가 없다.
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Recycle # Retain 은pvc와 pod삭제시 자료 유지/ Recycle은 pvc와 pod삭제시 공간 재활용으로 내용이 삭제된다.
+  nfs:
+    server: 192.168.1.180 # nfs server의 IP
+    path: /nfs_shared
+
+# kubectl apply -f nfs-pv.yaml
+# kubectl get pv
+# vi nfs-pvc.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nfs-pvc
+spec:
+  accessModes:
+    - ReadWriteMany # RWX
+  resources:
+    requests:
+      storage: 100Mi # labels와 selector가 없을경우 가장 비슷한 크기의 pv와 연결하게 된다.
+
+# kubectl apply -f nfs-pvc.yaml
+# kubectl get pvc
+# kubectl get pv
+# vi nfs-pvc-deploy.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nfs-pvc-deploy
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: nfs-pvc-deploy
+  template:
+    metadata:
+      labels:
+        app: nfs-pvc-deploy
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+        volumeMounts:
+        - name: nfs-vol
+          mountPath: /usr/share/nginx/html
+      volumes:
+      - name: nfs-vol
+        persistentVolumeClaim:
+          claimName: nfs-pvc
+
+# kubectl apply -f nfs-pvc-deploy.yaml
+# kubectl get pod
+# kubectl exec -it nfs-pvc-deploy-64dc997b89-6mhqm -- /bin/bash
+# kubectl expose deployment nfs-pvc-deploy --type=LoadBalancer --name=nfs-pvc-deploy-svc1 --port=80 --external-ip 192.168.56.101
+
+--- configMap
+컨피그맵은 키-값 쌍으로 기밀이 아닌 데이터를 저장하는 데 사용하는 API 오브젝트입니다. 파드는 볼륨에서 환경 변수, 커맨드-라인 인수 또는 구성 파일로 컨피그맵을 사용할 수 있습니다.
+컨피그맵을 사용하면 컨테이너 이미지에서 환경별 구성을 분리하여, 애플리케이션을 쉽게 이식할 수 있습니다.
+
+# vi configmap-dev.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config-dev
+  namespace: default
+data:
+  DB_URL: localhost
+  DB_USER: myuser
+  DB_PASS: mypass
+  DEBUG_INFO: debug
+
+# vi deployment-config01.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: configapp
+  labels:
+    app: configapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: configapp
+  template:
+    metadata:
+      labels:
+        app: configapp
+    spec:
+      containers:
+      - name: testapp
+        image: nginx
+        ports:
+        - containerPort: 8080
+        env:
+        - name: DEBUG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: config-dev
+              key: DEBUG_INFO
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: configapp
+  name: configapp-svc
+  namespace: default
+spec:
+  ports:
+  - nodePort: 30800
+    port: 8080
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: configapp
+
+kubectl exec -it configapp-64d4554b68-v55g5 -- bash
+
+vi configmap-wordpress.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config-wordpress
+  namespace: default
+data:
+  MYSQL_ROOT_HOST: '%'
+  MYSQL_ROOT_PASSWORD: mode1752
+  MYSQL_DATABASE: wordpress
+  MYSQL_USER: wpuser
+  MYSQL_PASSWORD: wppass
+
+kubectl describe configmaps config-wordpress
+
+vi mysql-pod-svc.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mysql-pod
+  labels:
+    app: mysql-pod
+spec:
+  containers:
+  - name: mysql-container
+    image: mysql:5.7
+    envFrom:
+    - configMapRef:
+        name: config-wordpress
+    ports:
+    - containerPort: 3306
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-svc
+spec:
+  type: ClusterIP
+  selector:
+    app: mysql-pod
+  ports:
+  - protocol: TCP
+    port: 3306
+    targetPort: 3306
+
+vi wordpress-pod-svc.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: wordpress-pod
+  labels:
+    app: wordpress-pod
+spec:
+  containers:
+  - name: wordpress-container
+    image: wordpress
+    env:
+    - name: WORDPRESS_DB_HOST
+      value: mysql-svc:3306
+    - name: WORDPRESS_DB_USER
+      valueFrom:
+        configMapKeyRef:
+          name: config-wordpress
+          key: MYSQL_USER
+    - name: WORDPRESS_DB_PASSWORD
+      valueFrom:
+        configMapKeyRef:
+          name: config-wordpress
+          key: MYSQL_PASSWORD
+    - name: WORDPRESS_DB_NAME
+      valueFrom:
+        configMapKeyRef:
+          name: config-wordpress
+          key: MYSQL_DATABASE
+    ports:
+    - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wordpress-svc
+spec:
+  type: LoadBalancer
+  externalIPs:
+  - 192.168.2.0
+  selector:
+    app: wordpress-pod
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+
+vi mysql-deploy-svc.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-deploy
+  labels:
+    app: mysql-deploy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql-deploy
+  template:
+    metadata:
+      labels:
+        app: mysql-deploy
+    spec:
+      containers:
+      - name: mysql-container
+        image: mysql:5.7
+        envFrom:
+        - configMapRef:
+            name: config-wordpress
+        ports:
+        - containerPort: 3306
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-svc
+spec:
+  type: ClusterIP
+  selector:
+    app: mysql-deploy
+  ports:
+  - protocol: TCP
+    port: 3306
+    targetPort: 3306
+
+vi wordpress-deploy-svc.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wordpress-deploy
+  labels:
+    app: wordpress-deploy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wordpress-deploy
+  template:
+    metadata:
+      labels:
+        app: wordpress-deploy
+    spec:
+      containers:
+      - name: wordpress-container
+        image: wordpress
+        env:
+        - name: WORDPRESS_DB_HOST
+          value: mysql-svc:3306
+        - name: WORDPRESS_DB_USER
+          valueFrom:
+            configMapKeyRef:
+              name: config-wordpress
+              key: MYSQL_USER
+        - name: WORDPRESS_DB_PASSWORD
+          valueFrom:
+            configMapKeyRef:
+              name: config-wordpress
+              key: MYSQL_PASSWORD
+        - name: WORDPRESS_DB_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: config-wordpress
+              key: MYSQL_DATABASE
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wordpress-svc
+spec:
+  type: LoadBalancer
+  externalIPs:
+  - 192.168.2.0
+  selector:
+    app: wordpress-deploy
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+
+--- namespace
+kubectl get namespaces
+kubectl config get-contexts kubernetes-admin@kubernetes
+kubectl config set-context kubernetes-admin@kubernetes --namespace=kube-system
+kubectl config get-contexts kubernetes-admin@kubernetes
+kubectl config set-context kubernetes-admin@kubernetes --namespace=default
+kubectl create namespace test-namespace
+kubectl get namespace
+kubectl config set-context kubernetes-admin@kubernetes --namespace=test-namespace
+kubectl config set-context kubernetes-admin@kubernetes --namespace=default
+
+--- ResourceQuota
+vi sample-resourcequota.yaml
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: sample-resourcequota
+  namespace: default
+spec:
+  hard:
+    count/pods: 5
+
+kubectl describe resourcequotas sample-resourcequota
+kubectl run pod new-nginx --image=nginx
+
+vi sample-resourcequota-usable.yaml
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: sample-resourcequota-usable
+  namespace: default
+spec:
+  hard:
+    requests.memory: 2Gi
+    requests.storage: 5Gi
+    sample-storageclass.storageclass.storage.k8s.io/requests.storage: 5Gi
+    requests.ephemeral-storage: 5Gi
+    requests.nvidia.com/gpu: 2
+    limits.cpu: 4
+    limits.ephemeral-storage: 10Gi
+    limits.nvidia.com/gpu: 4
+
+vi sample-pod.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: sample-pod
+spec:
+  containers:
+  - name: nginx-container
+    image: nginx:1.16
+
+vi sample-resource.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sample-resource
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: sample-app
+  template:
+    metadata:
+      labels:
+        app: sample-app
+    spec:
+      containers:
+      - name: nginx-container
+        image: nginx:1.16
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+
+--- LimitRange
+vi sample-limitrange-container.yaml
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: sample-limitrange-container
+  namespace: default
+spec:
+  limits:
+  - type: Container
+    default:
+      memory: 512Mi
+      cpu: 500m
+    defaultRequest:
+      memory: 256Mi
+      cpu: 250m
+    max:
+      memory: 1024Mi
+      cpu: 1000m
+    min:
+      memory: 128Mi
+      cpu: 125m
+    maxLimitRequestRatio:
+      memory: 2
+      cpu: 2
+
+vi sample-pod.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: sample-pod
+spec:
+  containers:
+  - name: nginx-container
+    image: nginx:1.16
+
+vi sample-pod-overrequest.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: sample-pod-overrequest
+spec:
+  containers:
+  - name: nginx-container
+    image: nginx:1.16
+    resources:
+      requests:
+        cpu: 100m
+      limits:
+        cpu: 100m
+
+vi sample-pod-overratio.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: sample-pod-overratio
+spec:
+  containers:
+  - name: nginx-container
+    image: nginx:1.16
+    resources:
+      requests:
+        cpu: 125m
+      limits:
+        cpu: 500m
+
+--- Prometheus, Grafana
+--- metallb
+chmod 777 helm-install.sh
+export DESIRED_VERSION=v3.2.1; ./helm-install.sh
+source <(helm completion bash)
+helm repo add edu https://iac-source.github.io/helm-charts
+helm repo list
+helm repo update
+helm install metallb edu/metallb \
+--namespace=metallb-system \
+--create-namespace \
+--set controller.tag=v0.8.3 \
+--set speaker.tag=v0.8.3 \
+--set configmap.ipRange=192.168.6.1-192.168.6.100
+helm show values edu/metallb
+kubectl get pod -n metallb-system
+kubectl describe pod -n metallb-system | grep Image:
+kubectl create deployment web00 --image=halilinux/test-home:v0.0
+kubectl expose deployment web00 --type=LoadBalancer --port=80
+kubectl get service web00
+kubectl set image deployment web00 test-home=halilinux/test-home:v1.0
+kubectl edit deployments.apps web00
+kubectl delete service web00
+kubectl delete deployments.apps web00
+
+--- Prometheus
+yum install -y nfs-utils.x86_64
+systemctl enable --now nfs
+vi nfs-exporter.sh
+vi prometheus-server-volume.yaml
+./prometheus-server-preconfig.sh
+./prometheus-install.sh
+kubectl patch pvc pvc_name -p '{"metadata":{"finalizers":null}}'
+kubectl patch pv pv_name -p '{"metadata":{"finalizers":null}}'
+kubectl patch pod pod_name -p '{"metadata":{"finalizers":null}}'
+kubectl get pod --selector=app=prometheus
+kubectl get service prometheus-server
+kubectl create deployment nginx --image=nginx
+kubectl apply -f nginx-status-annot.yaml
+kubectl apply -f nginx-status-metrics.yaml
+
+@@ 파드 스케줄(자동 배치)
+# vi pod-schedule.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-schedule-metadata
+  labels:
+    app: pod-schedule-labels
+spec:
+  containers:
+  - name: pod-schedule-containers
+    image: nginx
+    ports:
+    - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pod-schedule-service
+spec:
+  type: NodePort
+  selector:
+    app: pod-schedule-labels
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+
+@@ 파드 노드네임(수동 배치)
+# vi pod-nodename.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-nodename-metadata
+  labels:
+    app: pod-nodename-labels
+spec:
+  containers:
+  - name: pod-nodename-containers
+    image: nginx
+    ports:
+    - containerPort: 80
+  nodeName: worker1 # pod를 배치할 노드
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pod-nodename-service
+spec:
+  type: NodePort
+  selector:
+    app: pod-nodename-labels
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+
+@@ 노드 셀렉터(수동 배치)
+# kubectl label nodes worker1 app=dev
+# kubectl get nodes --show-labels
+# vi pod-nodeselector.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-nodeselector-metadata
+  labels:
+    app: pod-nodeselector-labels
+spec:
+  containers:
+  - name: pod-nodeselector-containers
+    image: nginx
+    ports:
+    - containerPort: 80
+  nodeSelector:
+    app: dev
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pod-nodeselector-service
+spec:
+  type: NodePort
+  selector:
+    app: pod-nodeselector-labels
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+# kubectl label nodes worker1 app-
+# kubectl get nodes --show-labels
+
+
+@@ taint와 toleration
+# kubectl taint node worker1 app=dev:NoSchedule
+# kubectl describe nodes worker1
+# vi pod-taint.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-taint-metadata
+  labels:
+    app: pod-taint-labels
+spec:
+  containers:
+  - name: pod-taint-containers
+    image: nginx
+    ports:
+    - containerPort: 80
+  tolerations: # app=dev:NoSchedule
+  - key: "app"
+    operator: "Equal"
+    value: "dev"
+    effect: "NoSchedule"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pod-taint-service
+spec:
+  type: NodePort
+  selector:
+    app: pod-taint-labels
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+
+--- EKS
+- aws 자격증명
+$ aws configure
+
+- aws ecr 업로드(push)
+$ aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/d1t0m2d9
+
+$ docker tag web-site:v1.0 public.ecr.aws/d1t0m2d9/web-site:v1.0
+
+$ docker push public.ecr.aws/d1t0m2d9/web-site:v1.0
+
+- eks cli
+$ aws eks --region ap-northeast-2 update-kubeconfig --name EKS-CLUSTER
+$ curl -o kubectl https://s3.us-west-2.amazonaws.com/amazon-eks/1.19.6/2021-01-05/bin/linux/amd64/kubectl
+# https://docs.aws.amazon.com/ko_kr/eks/latest/userguide/install-kubectl.html 설치 명령어 확인 주소
+$ chmod +x ./kubectl
+$ sudo mv ./kubectl /usr/local/bin
+$ source <(kubectl completion bash)
+$ echo "source <(kubectl completion bash)" >> ~/.bashrc
+$ kubectl version --short --client
+$ kubectl get svc
+
+- nodegroup 역할 만들기(IAM Role)
+AmazonEKSWorkerNodePolicy
+AmazonEC2ContainerRegistryReadOnly
+AmazonEKS_CNI_Policy
+
+$ mkdir test && cd $_
+$ vi deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-site-deployment
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: web-site-deployment
+  template:
+    metadata:
+      name: web-site-deployment
+      labels:
+        app: web-site-deployment
+    spec:
+      containers:
+      - name: web-site-deployment-container
+        image: public.ecr.aws/d1t0m2d9/web-site:v1.0
+
+---
+
+$ vi loadbalancer-deployment.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: loadbalancer-service-deployment
+spec:
+  type: LoadBalancer
+  selector:
+    app: web-site-deployment
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+
+--- aws volume
+$ aws ec2 create-volume --availability-zone=ap-northeast-2a --size=1 --volume-type=gp2
+
+$ mkdir volume && cd $_
+
+$ vi aws-sc.yaml
+# VOLUMEBINDINGMODE값을 WaitForFirstConsumer에서 Immediate로 변경
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: gp2
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+provisioner: kubernetes.io/aws-ebs # 공급자 정보
+parameters:
+  type: gp2 # gp2, gp3, io1, io2
+  fsType: ext4 
+
+$ vi aws-vol.yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-aws
+  labels:
+    type: local
+spec:
+  storageClassName: manual # 수동
+  capacity:
+    storage: 1Gi
+  persistentVolumeReclaimPolicy: Retain # public 클라우드의 경우 기본값이 Delete/ Retain은 pod 삭제시 볼륨 유지(데이터 유지)
+  accessModes:
+    - ReadWriteOnce
+  awsElasticBlockStore:
+    fsType: ext4
+    volumeID: vol-04b32230773ce7f80
+  claimRef:
+    namespace: default
+    name: pvc-aws
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-aws
+  namespace: default
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: manual
+  resources:
+    requests:
+      storage: 1Gi
+  selector:
+    matchLabels:
+      type: local
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-aws
+  namespace: default
+  labels:
+    app: pod-aws # service 생성시 필요
+spec:
+  containers:
+    - name: test
+      image: nginx
+      volumeMounts:
+        - mountPath: "/usr/share/nginx/html"
+          name: pvc
+  nodeName: ip-10-21-2-242.ap-northeast-2.compute.internal
+  volumes:
+    - name: pvc
+      persistentVolumeClaim:
+        claimName: pvc-aws
+
+---
+aws ec2 create-volume --availability-zone=ap-northeast-2c --size=1 --volume-type=gp2
+
+$ vi test-ebs.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-ebs
+  labels:
+    app: test-ebs
+spec:
+  containers:
+  - image: nginx
+    name: test-container
+    volumeMounts:
+    - mountPath: "/usr/share/nginx/html"
+      name: test-volume
+  nodeName: ip-10-21-36-208.ap-northeast-2.compute.internal
+  volumes:
+  - name: test-volume
+    # This AWS EBS volume must already exist.
+    awsElasticBlockStore:
+      volumeID: "vol-050ebc47de5d32693"
+      fsType: ext4
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-ebs-svc
+spec:
+  type: NodePort
+  selector:
+    app: test-ebs
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+    nodePort: 30080
+
+-------------------
+configmap-wordpress
+-------------------
+$ vi configmap-wordpress.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config-wordpress
+  namespace: default
+data:
+  WORDPRESS_DB_HOST: "database-1.cattn8fsrqmr.ap-northeast-2.rds.amazonaws.com:3306"
+  WORDPRESS_DB_USER: kosa
+  WORDPRESS_DB_PASSWORD: Kosa0401!
+  WORDPRESS_DB_NAME: wordpress
+
+$ vi wordpress-deployment-service.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wordpress-deploy
+  labels:
+    app: wordpress-deploy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wordpress-deploy
+  template:
+    metadata:
+      labels:
+        app: wordpress-deploy
+    spec:
+      containers:
+      - name: wordpress-container
+        image: wordpress
+        envFrom:
+        - configMapRef:
+            name: config-wordpress
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wordpress-svc
+spec:
+  type: LoadBalancer
+  selector:
+    app: wordpress-deploy
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+
