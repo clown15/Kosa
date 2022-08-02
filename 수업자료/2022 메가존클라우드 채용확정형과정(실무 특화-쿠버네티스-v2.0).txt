@@ -1317,7 +1317,7 @@ spec:
     ports:
     - containerPort: 80
   tolerations: # app=dev:NoSchedule
-  - key: "app"
+  - key: "tier"
     operator: "Equal"
     value: "dev"
     effect: "NoSchedule"
@@ -1567,3 +1567,28 @@ spec:
     port: 80
     targetPort: 80
 
+--- 클러스터 업그레이드
+- master 노드
+# yum list --showduplicates kubeadm --disableexcludes=kubernetes
+# yum install -y kubeadm-1.20.15-0 --disableexcludes=kubernetes
+# kubeadm version
+# kubeadm upgrade plan
+# kubeadm upgrade apply v1.20.15
+# yum install -y kubelet-1.20.15-0 kubectl-1.20.15-0 --disableexcludes=kubernetes
+# systemctl daemon-reload
+# systemctl restart kubelet
+
+- worker 노드
+# yum install -y kubeadm-1.20.15-0 --disableexcludes=kubernetes
+# kubeadm upgrade node
+- master 노드
+# kubectl drain worker1 --ignore-daemonsets --force
+# kubectl drain worker2 --ignore-daemonsets --force
+- worker 노드
+# yum install -y kubelet-1.20.15-0 kubectl-1.20.15-0 --disableexcludes=kubernetes
+# systemctl daemon-reload
+# systemctl restart kubelet
+- master 노드
+# kubectl uncordon worker1
+# kubectl uncordon worker2
+# kubectl get node

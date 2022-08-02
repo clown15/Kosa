@@ -158,7 +158,7 @@ PATH=$PATH:$HOME/bin:$JAVA_HOME:$M2_HOME:$M2
 # cd tomcat/bin/
 # ./shutdown.sh
 # ./startup.sh
-# /opt/tomcat/conf
+# cd /opt/tomcat/conf
 # vi tomcat-users.xml
 <role rolename="manager-gui"/>
 <role rolename="manager-script"/>

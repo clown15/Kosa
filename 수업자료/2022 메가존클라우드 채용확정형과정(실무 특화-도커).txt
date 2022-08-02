@@ -32,6 +32,10 @@ usermod -a -G docker ec2-user
     # ec2-user가 docker를 사용하기 위한 명령어로 적용이 안된다면 세션 재접속이 필요하다.
 docker run -d -p 80:80 --name=test-site clownpark/web-site:v1.0
 
+cat <<EOF >> /home/ec2-user/.bashrc
+alias cl='clear'
+EOF
+
 --- 도커 기본 명령어
 
 # docker search nginx
