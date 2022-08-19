@@ -1,9 +1,9 @@
---- CentOS7 ¸®´ª½º ¼­¹ö (AWS EC2 - Amazon Linux 2 Image)
-1. SSHD(Secure Shell Daemon; KeyPair »ý¼º ¹× È°¿ë) - AWS KeyPair
-Å° ½ÖÀº Æ¯Á¤ ÀÎÁõ ÇÁ·ÎÅäÄÝ¿¡ »ç¿ëµÇ´Â °ø°³(Public) Å°(ÀÚ¹°¼è-¼­¹ö) ¹× ÇÁ¶óÀÌºø(Private; *.pem) Å°(¿­¼è-°³ÀÎ Æú´õ) ÆÄÀÏÀ» ³ªÅ¸³À´Ï´Ù.
-SSH °ø°³ Å° ÀÎÁõÀº ºñµ¿±â ¾ÏÈ£È­ ¾Ë°í¸®ÁòÀ» »ç¿ëÇÏ¿© "ÇÁ¶óÀÌºø" Å°¿Í "°ø°³" Å°¶ó´Â µÎ °¡Áö Å° ÆÄÀÏÀ» »ý¼ºÇÕ´Ï´Ù. ÇÁ¶óÀÌºø Å° ÆÄÀÏÀº ¾ÏÈ£¿Í µ¿ÀÏÇÏ¸ç, ¸ðµç »óÈ²¿¡¼­ º¸È£µÇ¾î¾ß ÇÕ´Ï´Ù. ´Ù¸¥ »ç¶÷ÀÌ »ç¿ëÀÚÀÇ ÇÁ¶óÀÌºø Å°¸¦ È¹µæÇÏ¸é »ç¿ëÀÚ°¡ ¾×¼¼½ºÇÒ ¼ö ÀÖ´Â ¸ðµç SSH ¼­¹ö¿¡ »ç¿ëÀÚÀÇ ÀÌ¸§À¸·Î ·Î±×ÀÎÇÒ ¼ö ÀÖ½À´Ï´Ù.
+--- CentOS7 ë¦¬ëˆ…ìŠ¤ ì„œë²„ (AWS EC2 - Amazon Linux 2 Image)
+1. SSHD(Secure Shell Daemon; KeyPair ìƒì„± ë° í™œìš©) - AWS KeyPair
+í‚¤ ìŒì€ íŠ¹ì • ì¸ì¦ í”„ë¡œí† ì½œì— ì‚¬ìš©ë˜ëŠ” ê³µê°œ(Public) í‚¤(ìžë¬¼ì‡ -ì„œë²„) ë° í”„ë¼ì´ë¹—(Private; *.pem) í‚¤(ì—´ì‡ -ê°œì¸ í´ë”) íŒŒì¼ì„ ë‚˜íƒ€ëƒ…ë‹ˆë‹¤.
+SSH ê³µê°œ í‚¤ ì¸ì¦ì€ ë¹„ë™ê¸° ì•”í˜¸í™” ì•Œê³ ë¦¬ì¦˜ì„ ì‚¬ìš©í•˜ì—¬ "í”„ë¼ì´ë¹—" í‚¤ì™€ "ê³µê°œ" í‚¤ë¼ëŠ” ë‘ ê°€ì§€ í‚¤ íŒŒì¼ì„ ìƒì„±í•©ë‹ˆë‹¤. í”„ë¼ì´ë¹— í‚¤ íŒŒì¼ì€ ì•”í˜¸ì™€ ë™ì¼í•˜ë©°, ëª¨ë“  ìƒí™©ì—ì„œ ë³´í˜¸ë˜ì–´ì•¼ í•©ë‹ˆë‹¤. ë‹¤ë¥¸ ì‚¬ëžŒì´ ì‚¬ìš©ìžì˜ í”„ë¼ì´ë¹— í‚¤ë¥¼ íšë“í•˜ë©´ ì‚¬ìš©ìžê°€ ì•¡ì„¸ìŠ¤í•  ìˆ˜ ìžˆëŠ” ëª¨ë“  SSH ì„œë²„ì— ì‚¬ìš©ìžì˜ ì´ë¦„ìœ¼ë¡œ ë¡œê·¸ì¸í•  ìˆ˜ ìžˆìŠµë‹ˆë‹¤.
 # vi /etc/sysconfig/network-scripts/ifcfg-ens33
-onboot=no -> yes º¯°æ
+onboot=no -> yes ë³€ê²½
 
 # systemctl restart network
 
@@ -19,8 +19,8 @@ C:\Users\HanGi Lee\.ssh> ssh -i my-key.pem root@192.168.0.85
 # vi /etc/ssh/sshd_config
 PasswordAuthentication no
 # systemctl restart sshd
-well-known ¾Ë·ÁÁø Æ÷Æ®¹øÈ£ : 0 ~ 1023 (¼­¹ö Æ÷Æ®) - 21(FTP), 22(SSH), 23(TELNET), 25(SMTP), 53(DNS), 67(DHCP) 80(HTTP), 443(HTTPS), 
-unknown ¾Ë·ÁÁöÁö ¾ÊÀº Æ÷Æ® : 1024 ~ 65535 (Å¬¶óÀÌ¾ðÆ® Æ÷Æ®) - 3306(MYSQL), 3389(RDP)
+well-known ì•Œë ¤ì§„ í¬íŠ¸ë²ˆí˜¸ : 0 ~ 1023 (ì„œë²„ í¬íŠ¸) - 21(FTP), 22(SSH), 23(TELNET), 25(SMTP), 53(DNS), 67(DHCP) 80(HTTP), 443(HTTPS), 
+unknown ì•Œë ¤ì§€ì§€ ì•Šì€ í¬íŠ¸ : 1024 ~ 65535 (í´ë¼ì´ì–¸íŠ¸ í¬íŠ¸) - 3306(MYSQL), 3389(RDP)
 
 http://netdoctor.co.kr
 
@@ -28,8 +28,8 @@ http://netdoctor.co.kr
 # firewall-cmd --reload
 # firewall-cmd --list-all
 
-2. HTTPD(Hyper Text Transfer Protocol Daemon; À¥¼­¹ö ±¸Ãà ¹× °£´Ü È¨ÆäÀÌÁö ²Ù¹Ì±â) - AWS Linux (apache, nginx), WIN (IIS:Internet Information Services)
-HTTP´Â HTML ¹®¼­¿Í °°Àº ¸®¼Ò½ºµéÀ» °¡Á®¿Ã ¼ö ÀÖµµ·Ï ÇØÁÖ´Â ÇÁ·ÎÅäÄÝÀÔ´Ï´Ù. HTTP´Â À¥¿¡¼­ ÀÌ·ç¾îÁö´Â ¸ðµç µ¥ÀÌÅÍ ±³È¯ÀÇ ±âÃÊÀÌ¸ç, Å¬¶óÀÌ¾ðÆ®-¼­¹ö ÇÁ·ÎÅäÄÝÀÌ±âµµ ÇÕ´Ï´Ù. Å¬¶óÀÌ¾ðÆ®-¼­¹ö ÇÁ·ÎÅäÄÝÀÌ¶õ (º¸Åë À¥ºê¶ó¿ìÀúÀÎ) ¼ö½ÅÀÚ Ãø¿¡ ÀÇÇØ ¿äÃ»ÀÌ ÃÊ±âÈ­µÇ´Â ÇÁ·ÎÅäÄÝÀ» ÀÇ¹ÌÇÕ´Ï´Ù. ÇÏ³ªÀÇ ¿ÏÀüÇÑ ¹®¼­´Â ÅØ½ºÆ®, ·¹ÀÌ¾Æ¿ô ¼³¸í, ÀÌ¹ÌÁö, ºñµð¿À, ½ºÅ©¸³Æ® µî ºÒ·¯¿Â(fetched) ÇÏÀ§ ¹®¼­µé·Î Àç±¸¼ºµË´Ï´Ù.
+2. HTTPD(Hyper Text Transfer Protocol Daemon; ì›¹ì„œë²„ êµ¬ì¶• ë° ê°„ë‹¨ í™ˆíŽ˜ì´ì§€ ê¾¸ë¯¸ê¸°) - AWS Linux (apache, nginx), WIN (IIS:Internet Information Services)
+HTTPëŠ” HTML ë¬¸ì„œì™€ ê°™ì€ ë¦¬ì†ŒìŠ¤ë“¤ì„ ê°€ì ¸ì˜¬ ìˆ˜ ìžˆë„ë¡ í•´ì£¼ëŠ” í”„ë¡œí† ì½œìž…ë‹ˆë‹¤. HTTPëŠ” ì›¹ì—ì„œ ì´ë£¨ì–´ì§€ëŠ” ëª¨ë“  ë°ì´í„° êµí™˜ì˜ ê¸°ì´ˆì´ë©°, í´ë¼ì´ì–¸íŠ¸-ì„œë²„ í”„ë¡œí† ì½œì´ê¸°ë„ í•©ë‹ˆë‹¤. í´ë¼ì´ì–¸íŠ¸-ì„œë²„ í”„ë¡œí† ì½œì´ëž€ (ë³´í†µ ì›¹ë¸Œë¼ìš°ì €ì¸) ìˆ˜ì‹ ìž ì¸¡ì— ì˜í•´ ìš”ì²­ì´ ì´ˆê¸°í™”ë˜ëŠ” í”„ë¡œí† ì½œì„ ì˜ë¯¸í•©ë‹ˆë‹¤. í•˜ë‚˜ì˜ ì™„ì „í•œ ë¬¸ì„œëŠ” í…ìŠ¤íŠ¸, ë ˆì´ì•„ì›ƒ ì„¤ëª…, ì´ë¯¸ì§€, ë¹„ë””ì˜¤, ìŠ¤í¬ë¦½íŠ¸ ë“± ë¶ˆëŸ¬ì˜¨(fetched) í•˜ìœ„ ë¬¸ì„œë“¤ë¡œ ìž¬êµ¬ì„±ë©ë‹ˆë‹¤.
 
 C:\Users\HanGi Lee\.ssh> ssh -i id_rsa root@192.168.56.120
 # sestatus
@@ -87,13 +87,13 @@ SELINUX=disabled
     <h1>Congratulations</h1>
     <h2>This application was deployed using AWS ECS, EKS.</h2>
     <p>For next steps, read the <a href="https://aws.amazon.com/ko">AWS Management Console.</a></p>
-    <p><img src="images/two-rabbit.jpg" alt="µÎ¸¶¸® Åä³¢" height="350"></p>
+    <p><img src="images/two-rabbit.jpg" alt="ë‘ë§ˆë¦¬ í† ë¼" height="350"></p>
   </div>
 </body>
 </html>
 
-3. Storage Ãß°¡(Mount; Block Storage ´Ù·ç±â -> sda(root volume) -> OS, App ) - AWS EBS
-¸¶¿îÆ®(mount)´Â ÄÄÇ»ÅÍ °úÇÐ¿¡¼­ ÀúÀå ÀåÄ¡¿¡ Á¢±ÙÇÒ ¼ö ÀÖ´Â °æ·Î¸¦ µð·ºÅÍ¸® ±¸Á¶¿¡ ÆíÀÔ½ÃÅ°´Â ÀÛ¾÷ÀÔ´Ï´Ù. Á¼Àº ÀÇ¹Ì·Î´Â À¯´Ð½º °è¿­ÀÇ ¿î¿µ Ã¼Á¦¿¡¼­ÀÇ mount ¸í·É¾î ¶Ç´Â ±× ¸í·É¾î¸¦ »ç¿ëÇÏ´Â °ÍÀÔ´Ï´Ù. mount ¸í·É¾î¸¦ »ç¿ëÇÏ¸é ÀúÀå ÀåÄ¡ÀÇ Á¢±Ù °æ·Î¸¦ ¿øÇÏ´Â À§Ä¡¿¡ »ý¼ºÇÒ ¼ö ÀÖ½À´Ï´Ù. ¸¶¿îÆ®¸¦ ÀÌ¿ëÇÏ¸é ºÐ»ê ÆÄÀÏ ½Ã½ºÅÛÀ¸·Î È®ÀåÇÏ±â°¡ ¿ëÀÌÇÕ´Ï´Ù. »ç¿ëÀÚ´Â ¸¶¿îÆ®µÈ ¹Ìµð¾îÀÇ ÆÄÀÏµé¿¡¸¸ Á¢±ÙÀÌ °¡´ÉÇÕ´Ï´Ù.
+3. Storage ì¶”ê°€(Mount; Block Storage ë‹¤ë£¨ê¸° -> sda(root volume) -> OS, App ) - AWS EBS
+ë§ˆìš´íŠ¸(mount)ëŠ” ì»´í“¨í„° ê³¼í•™ì—ì„œ ì €ìž¥ ìž¥ì¹˜ì— ì ‘ê·¼í•  ìˆ˜ ìžˆëŠ” ê²½ë¡œë¥¼ ë””ë ‰í„°ë¦¬ êµ¬ì¡°ì— íŽ¸ìž…ì‹œí‚¤ëŠ” ìž‘ì—…ìž…ë‹ˆë‹¤. ì¢ì€ ì˜ë¯¸ë¡œëŠ” ìœ ë‹‰ìŠ¤ ê³„ì—´ì˜ ìš´ì˜ ì²´ì œì—ì„œì˜ mount ëª…ë ¹ì–´ ë˜ëŠ” ê·¸ ëª…ë ¹ì–´ë¥¼ ì‚¬ìš©í•˜ëŠ” ê²ƒìž…ë‹ˆë‹¤. mount ëª…ë ¹ì–´ë¥¼ ì‚¬ìš©í•˜ë©´ ì €ìž¥ ìž¥ì¹˜ì˜ ì ‘ê·¼ ê²½ë¡œë¥¼ ì›í•˜ëŠ” ìœ„ì¹˜ì— ìƒì„±í•  ìˆ˜ ìžˆìŠµë‹ˆë‹¤. ë§ˆìš´íŠ¸ë¥¼ ì´ìš©í•˜ë©´ ë¶„ì‚° íŒŒì¼ ì‹œìŠ¤í…œìœ¼ë¡œ í™•ìž¥í•˜ê¸°ê°€ ìš©ì´í•©ë‹ˆë‹¤. ì‚¬ìš©ìžëŠ” ë§ˆìš´íŠ¸ëœ ë¯¸ë””ì–´ì˜ íŒŒì¼ë“¤ì—ë§Œ ì ‘ê·¼ì´ ê°€ëŠ¥í•©ë‹ˆë‹¤.
 
 # df -h
 # lsblk
@@ -108,10 +108,10 @@ UUID="3ffe9c91-2ce7-457a-9fbc-07922ff6b652"  /data  xfs  defaults,nofail  0  2
 
 # umount /data
 
-4. SAMBA(Server Message Block; file storage -> ³×Æ®¿öÅ© ÆÄÀÏ °øÀ¯ -> À©µµ¿ì¿ë ÆÄÀÏ ½Ã½ºÅÛ) - Amazon FSx À¯»ç - ¿ÏÀü °ü¸®Çü ¼­ºñ½º
-¼­¹ö ¸Þ½ÃÁö ºí·Ï(Server Message Block, SMB)Àº µµ½º³ª À©µµ¿ì¿¡¼­ ÆÄÀÏÀÌ³ª µð·ºÅÍ¸® ¹× ÁÖº¯ ÀåÄ¡µéÀ» °øÀ¯ÇÏ´Âµ¥ »ç¿ëµÇ´Â ¸Þ½ÃÁö Çü½ÄÀÔ´Ï´Ù. NetBIOS´Â SMB Çü½Ä¿¡ ±â¹ÝÀ» µÎ°í ÀÖÀ¸¸ç, ¸¹Àº ³×Æ®¿öÅ© Á¦Ç°µéµµ SMB¸¦ »ç¿ëÇÕ´Ï´Ù. ÀÌ·¯ÇÑ SMB ±â¹ÝÀÇ ³×Æ®¿öÅ©¿¡´Â ·£¸Å´ÏÀú, À©µµ¿ì Æ÷ ¿öÅ©±×·ì(Windows for Workgroups), À©µµ¿ì NT, ±×¸®°í ·£ ¼­¹ö(Lan Server) µîÀÌ ÀÖ½À´Ï´Ù. ¼­·Î ´Ù¸¥ ¿î¿µ Ã¼Á¦ »çÀÌ¿¡ ÆÄÀÏÀ» °øÀ¯ÇÒ ¼ö ÀÖµµ·Ï ÇÏ±â À§ÇØ SMB¸¦ »ç¿ëÇÏ´Â Á¦Ç°µéµµ ¸¹ÀÌ ÀÖ½À´Ï´Ù. ±× Áß ÇÏ³ª°¡ »ï¹ÙÀÎµ¥, À¯´Ð½º¿Í À©µµ¿ì ÄÄÇ»ÅÍµé°£¿¡ µð·ºÅÍ¸®¿Í ÆÄÀÏÀ» °øÀ¯ÇÒ ¼ö ÀÖ°Ô ÇÕ´Ï´Ù.
+4. SAMBA(Server Message Block; file storage -> ë„¤íŠ¸ì›Œí¬ íŒŒì¼ ê³µìœ  -> ìœˆë„ìš°ìš© íŒŒì¼ ì‹œìŠ¤í…œ) - Amazon FSx ìœ ì‚¬ - ì™„ì „ ê´€ë¦¬í˜• ì„œë¹„ìŠ¤
+ì„œë²„ ë©”ì‹œì§€ ë¸”ë¡(Server Message Block, SMB)ì€ ë„ìŠ¤ë‚˜ ìœˆë„ìš°ì—ì„œ íŒŒì¼ì´ë‚˜ ë””ë ‰í„°ë¦¬ ë° ì£¼ë³€ ìž¥ì¹˜ë“¤ì„ ê³µìœ í•˜ëŠ”ë° ì‚¬ìš©ë˜ëŠ” ë©”ì‹œì§€ í˜•ì‹ìž…ë‹ˆë‹¤. NetBIOSëŠ” SMB í˜•ì‹ì— ê¸°ë°˜ì„ ë‘ê³  ìžˆìœ¼ë©°, ë§Žì€ ë„¤íŠ¸ì›Œí¬ ì œí’ˆë“¤ë„ SMBë¥¼ ì‚¬ìš©í•©ë‹ˆë‹¤. ì´ëŸ¬í•œ SMB ê¸°ë°˜ì˜ ë„¤íŠ¸ì›Œí¬ì—ëŠ” ëžœë§¤ë‹ˆì €, ìœˆë„ìš° í¬ ì›Œí¬ê·¸ë£¹(Windows for Workgroups), ìœˆë„ìš° NT, ê·¸ë¦¬ê³  ëžœ ì„œë²„(Lan Server) ë“±ì´ ìžˆìŠµë‹ˆë‹¤. ì„œë¡œ ë‹¤ë¥¸ ìš´ì˜ ì²´ì œ ì‚¬ì´ì— íŒŒì¼ì„ ê³µìœ í•  ìˆ˜ ìžˆë„ë¡ í•˜ê¸° ìœ„í•´ SMBë¥¼ ì‚¬ìš©í•˜ëŠ” ì œí’ˆë“¤ë„ ë§Žì´ ìžˆìŠµë‹ˆë‹¤. ê·¸ ì¤‘ í•˜ë‚˜ê°€ ì‚¼ë°”ì¸ë°, ìœ ë‹‰ìŠ¤ì™€ ìœˆë„ìš° ì»´í“¨í„°ë“¤ê°„ì— ë””ë ‰í„°ë¦¬ì™€ íŒŒì¼ì„ ê³µìœ í•  ìˆ˜ ìžˆê²Œ í•©ë‹ˆë‹¤.
 
-- ¼­¹ö
+- ì„œë²„
 # yum install -y samba
 # mkdir -p /var/samba/share
 # chmod 777 /var/samba/share
@@ -140,17 +140,17 @@ UUID="3ffe9c91-2ce7-457a-9fbc-07922ff6b652"  /data  xfs  defaults,nofail  0  2
 # firewall-cmd --permanent --add-service=samba --zone=public
 # firewall-cmd --reload
 
-- À©µµ¿ì Å¬¶óÀÌ¾ðÆ® Á¢¼Ó ¹æ¹ý
+- ìœˆë„ìš° í´ë¼ì´ì–¸íŠ¸ ì ‘ì† ë°©ë²•
 \\192.168.56.120
 
-- CentOS7 Å¬¶óÀÌ¾ðÆ® Á¢¼Ó ¹æ¹ý
+- CentOS7 í´ë¼ì´ì–¸íŠ¸ ì ‘ì† ë°©ë²•
 # yum install -y samba-client
 # smbclient //192.168.56.120/share -U kosa
 
-5. NFS(Network File System; file storage -> ³×Æ®¿öÅ© ÆÄÀÏ °øÀ¯ -> ¸®´ª½º¿ë ÆÄÀÏ ½Ã½ºÅÛ) - AWS EFS - ¿ÏÀü °ü¸®Çü ¼­ºñ½º
-³×Æ®¿öÅ© ÆÄÀÏ ½Ã½ºÅÛ(Network File System, NFS)Àº 1984³â¿¡ ½ã ¸¶ÀÌÅ©·Î½Ã½ºÅÛÁî°¡ °³¹ßÇÑ ÇÁ·ÎÅäÄÝÀÔ´Ï´Ù. Å¬¶óÀÌ¾ðÆ® ÄÄÇ»ÅÍÀÇ »ç¿ëÀÚ°¡ ³×Æ®¿öÅ© »óÀÇ ÆÄÀÏÀ» Á÷Á¢ ¿¬°áµÈ ½ºÅä¸®Áö¿¡ Á¢±ÙÇÏ´Â ¹æ½Ä°ú ºñ½ÁÇÑ ¹æ½ÄÀ¸·Î Á¢±ÙÇÏµµ·Ï µµ¿Í ÁÝ´Ï´Ù. ´Ù¸¥ ¼ö¸¹Àº ÇÁ·ÎÅäÄÝ°ú ¸¶Âù°¡Áö·Î ONC RPC ½Ã½ºÅÛÀ» ±â¹ÝÀ¸·Î ÇÕ´Ï´Ù. ³×Æ®¿öÅ© ÆÄÀÏ ½Ã½ºÅÛÀº RFC¿¡ Á¤ÀÇµÈ ¿ÀÇÂ Ç¥ÁØÀÌ¹Ç·Î ´©±¸³ª ±¸ÇöÇÒ ¼ö ÀÖ½À´Ï´Ù.
+5. NFS(Network File System; file storage -> ë„¤íŠ¸ì›Œí¬ íŒŒì¼ ê³µìœ  -> ë¦¬ëˆ…ìŠ¤ìš© íŒŒì¼ ì‹œìŠ¤í…œ) - AWS EFS - ì™„ì „ ê´€ë¦¬í˜• ì„œë¹„ìŠ¤
+ë„¤íŠ¸ì›Œí¬ íŒŒì¼ ì‹œìŠ¤í…œ(Network File System, NFS)ì€ 1984ë…„ì— ì¬ ë§ˆì´í¬ë¡œì‹œìŠ¤í…œì¦ˆê°€ ê°œë°œí•œ í”„ë¡œí† ì½œìž…ë‹ˆë‹¤. í´ë¼ì´ì–¸íŠ¸ ì»´í“¨í„°ì˜ ì‚¬ìš©ìžê°€ ë„¤íŠ¸ì›Œí¬ ìƒì˜ íŒŒì¼ì„ ì§ì ‘ ì—°ê²°ëœ ìŠ¤í† ë¦¬ì§€ì— ì ‘ê·¼í•˜ëŠ” ë°©ì‹ê³¼ ë¹„ìŠ·í•œ ë°©ì‹ìœ¼ë¡œ ì ‘ê·¼í•˜ë„ë¡ ë„ì™€ ì¤ë‹ˆë‹¤. ë‹¤ë¥¸ ìˆ˜ë§Žì€ í”„ë¡œí† ì½œê³¼ ë§ˆì°¬ê°€ì§€ë¡œ ONC RPC ì‹œìŠ¤í…œì„ ê¸°ë°˜ìœ¼ë¡œ í•©ë‹ˆë‹¤. ë„¤íŠ¸ì›Œí¬ íŒŒì¼ ì‹œìŠ¤í…œì€ RFCì— ì •ì˜ëœ ì˜¤í”ˆ í‘œì¤€ì´ë¯€ë¡œ ëˆ„êµ¬ë‚˜ êµ¬í˜„í•  ìˆ˜ ìžˆìŠµë‹ˆë‹¤.
 
-- ¼­¹ö
+- ì„œë²„
 # yum install -y nfs-utils
 # mkdir /share && cd $_
 # echo "Hello" > test.txt
@@ -167,7 +167,7 @@ UUID="3ffe9c91-2ce7-457a-9fbc-07922ff6b652"  /data  xfs  defaults,nofail  0  2
 # firewall-cmd --permanent --add-service=mountd
 # firewall-cmd --reload
 
-- Å¬¶óÀÌ¾ðÆ®
+- í´ë¼ì´ì–¸íŠ¸
 Centos7
 # rpm -qa | grep nfs-utils
 # yum install -y nfs-utils
@@ -182,10 +182,10 @@ $ sudo apt-get install -y nfs-common
 # vi /etc/fstab
 192.168.56.120:/share /root/share nfs defaults 0 0
 
-6. DB¼­¹ö(Database Management System; MariaDB) - AWS RDS - ¿ÏÀü °ü¸®Çü ¼­ºñ½º
-MariaDB´Â ¿ÀÇÂ ¼Ò½ºÀÇ °ü°èÇü µ¥ÀÌÅÍº£ÀÌ½º °ü¸® ½Ã½ºÅÛ(RDBMS)ÀÔ´Ï´Ù. MySQL°ú µ¿ÀÏÇÑ ¼Ò½º ÄÚµå¸¦ ±â¹ÝÀ¸·Î ÇÏ¸ç, GPL v2 ¶óÀÌ¼±½º¸¦ µû¸¨´Ï´Ù. ¿À¶óÅ¬ ¼ÒÀ¯ÀÇ ÇöÀç ºÒÈ®½ÇÇÑ MySQLÀÇ ¶óÀÌ¼±½º »óÅÂ¿¡ ¹Ý¹ßÇÏ¿© ¸¸µé¾îÁ³½À´Ï´Ù.
+6. DBì„œë²„(Database Management System; MariaDB) - AWS RDS - ì™„ì „ ê´€ë¦¬í˜• ì„œë¹„ìŠ¤
+MariaDBëŠ” ì˜¤í”ˆ ì†ŒìŠ¤ì˜ ê´€ê³„í˜• ë°ì´í„°ë² ì´ìŠ¤ ê´€ë¦¬ ì‹œìŠ¤í…œ(RDBMS)ìž…ë‹ˆë‹¤. MySQLê³¼ ë™ì¼í•œ ì†ŒìŠ¤ ì½”ë“œë¥¼ ê¸°ë°˜ìœ¼ë¡œ í•˜ë©°, GPL v2 ë¼ì´ì„ ìŠ¤ë¥¼ ë”°ë¦…ë‹ˆë‹¤. ì˜¤ë¼í´ ì†Œìœ ì˜ í˜„ìž¬ ë¶ˆí™•ì‹¤í•œ MySQLì˜ ë¼ì´ì„ ìŠ¤ ìƒíƒœì— ë°˜ë°œí•˜ì—¬ ë§Œë“¤ì–´ì¡ŒìŠµë‹ˆë‹¤.
 
-- ¼­¹ö
+- ì„œë²„
 repo = repository
 # vi /etc/yum.repos.d/MariaDB.repo
 [mariadb]
@@ -211,32 +211,32 @@ quit
 # firewall-cmd --permanent --add-service=mysql
 # firewall-cmd --reload
 
-- Å¬¶óÀÌ¾ðÆ®
+- í´ë¼ì´ì–¸íŠ¸
 # yum install mysql -y
 # mysql -h 192.168.56.120 -u wpuser -p
 
 
---- ¸®´ª½º ³×Æ®¿öÅ©
-1 Router (IP °øÀ¯±â; AWS VPC NAT GateWay)
-³×Æ®¿öÅ© ÁÖ¼Ò º¯È¯(NAT; Network Address Translation)Àº ÄÄÇ»ÅÍ ³×Æ®¿öÅ·¿¡¼­ ¾²ÀÌ´Â ¿ë¾î·Î¼­, IP ÆÐÅ¶ÀÇ TCP/UDP Æ÷Æ® ¼ýÀÚ¿Í ¼Ò½º ¹× ¸ñÀûÁöÀÇ IP ÁÖ¼Ò µîÀ» Àç±â·ÏÇÏ¸é¼­ ¶ó¿ìÅÍ¸¦ ÅëÇØ ³×Æ®¿öÅ© Æ®·¡ÇÈÀ» ÁÖ°í ¹Þ´Â ±â¼úÀ» ¸»ÇÕ´Ï´Ù. NAT¸¦ ÀÌ¿ëÇÏ´Â ÀÌÀ¯´Â ´ë°³ »ç¼³ ³×Æ®¿öÅ©¿¡ ¼ÓÇÑ ¿©·¯ °³ÀÇ È£½ºÆ®°¡ ÇÏ³ªÀÇ °øÀÎ IP ÁÖ¼Ò¸¦ »ç¿ëÇÏ¿© ÀÎÅÍ³Ý¿¡ Á¢¼ÓÇÏ±â À§ÇÔÀÔ´Ï´Ù. ¸¹Àº ³×Æ®¿öÅ© °ü¸®ÀÚµéÀÌ NAT¸¦ Æí¸®ÇÑ ±â¹ýÀÌ¶ó°í º¸°í ³Î¸® »ç¿ëÇÏ°í ÀÖ½À´Ï´Ù.
-°øÀÎIP = Public IP
-»ç¼³IP = Private IP
+--- ë¦¬ëˆ…ìŠ¤ ë„¤íŠ¸ì›Œí¬
+1 Router (IP ê³µìœ ê¸°; AWS VPC NAT GateWay)
+ë„¤íŠ¸ì›Œí¬ ì£¼ì†Œ ë³€í™˜(NAT; Network Address Translation)ì€ ì»´í“¨í„° ë„¤íŠ¸ì›Œí‚¹ì—ì„œ ì“°ì´ëŠ” ìš©ì–´ë¡œì„œ, IP íŒ¨í‚·ì˜ TCP/UDP í¬íŠ¸ ìˆ«ìžì™€ ì†ŒìŠ¤ ë° ëª©ì ì§€ì˜ IP ì£¼ì†Œ ë“±ì„ ìž¬ê¸°ë¡í•˜ë©´ì„œ ë¼ìš°í„°ë¥¼ í†µí•´ ë„¤íŠ¸ì›Œí¬ íŠ¸ëž˜í”½ì„ ì£¼ê³  ë°›ëŠ” ê¸°ìˆ ì„ ë§í•©ë‹ˆë‹¤. NATë¥¼ ì´ìš©í•˜ëŠ” ì´ìœ ëŠ” ëŒ€ê°œ ì‚¬ì„¤ ë„¤íŠ¸ì›Œí¬ì— ì†í•œ ì—¬ëŸ¬ ê°œì˜ í˜¸ìŠ¤íŠ¸ê°€ í•˜ë‚˜ì˜ ê³µì¸ IP ì£¼ì†Œë¥¼ ì‚¬ìš©í•˜ì—¬ ì¸í„°ë„·ì— ì ‘ì†í•˜ê¸° ìœ„í•¨ìž…ë‹ˆë‹¤. ë§Žì€ ë„¤íŠ¸ì›Œí¬ ê´€ë¦¬ìžë“¤ì´ NATë¥¼ íŽ¸ë¦¬í•œ ê¸°ë²•ì´ë¼ê³  ë³´ê³  ë„ë¦¬ ì‚¬ìš©í•˜ê³  ìžˆìŠµë‹ˆë‹¤.
+ê³µì¸IP = Public IP
+ì‚¬ì„¤IP = Private IP
 A Class 10.0.0.0 ~ 10.255.255.255
 B Class 172.16.0.0 ~ 172.31.255.255
 C Class 192.168.0.0 ~ 192.168.255.255
 
-°­ÀÇ½Ç ³×Æ®¿öÅ©
+ê°•ì˜ì‹¤ ë„¤íŠ¸ì›Œí¬
 Public Subnet
 192.168.0.0/24
-192.168.0.0 ~ 192.168.0.255 (256°³ IP - 2°³ = 254°³)
-192.168.0.0   ³×Æ®¿öÅ© ÁÖ¼Ò(½ÃÀÛ IP)
-192.168.0.255 ºê·ÎµåÄ³½ºÆÃ ÁÖ¼Ò(¸¶Áö¸· IP)
+192.168.0.0 ~ 192.168.0.255 (256ê°œ IP - 2ê°œ = 254ê°œ)
+192.168.0.0   ë„¤íŠ¸ì›Œí¬ ì£¼ì†Œ(ì‹œìž‘ IP)
+192.168.0.255 ë¸Œë¡œë“œìºìŠ¤íŒ… ì£¼ì†Œ(ë§ˆì§€ë§‰ IP)
 
 Private Subnet
 10.0.21.0/24
-10.0.21.0 ~ 10.0.21.255 (256°³(0~255) IP - 2°³(0,255) = 254°³)
-10.0.21.0   ³×Æ®¿öÅ© ÁÖ¼Ò(½ÃÀÛ IP)
-10.0.21.255 ºê·ÎµåÄ³½ºÆÃ ÁÖ¼Ò(¸¶Áö¸· IP)
+10.0.21.0 ~ 10.0.21.255 (256ê°œ(0~255) IP - 2ê°œ(0,255) = 254ê°œ)
+10.0.21.0   ë„¤íŠ¸ì›Œí¬ ì£¼ì†Œ(ì‹œìž‘ IP)
+10.0.21.255 ë¸Œë¡œë“œìºìŠ¤íŒ… ì£¼ì†Œ(ë§ˆì§€ë§‰ IP)
 
 # hostnamectl set-hostname nat
 
@@ -262,7 +262,7 @@ IPADDR=10.0.21.1
 NETMASK=255.255.255.0
 
 yum install -y bash-completion
-¼³Ä¡ ÈÄ ¼¼¼Ç ÀçÁ¢¼Ó ÇÊ¿ä
+ì„¤ì¹˜ í›„ ì„¸ì…˜ ìž¬ì ‘ì† í•„ìš”
 
 # systemctl restart network
 # firewall-cmd --get-active-zone
@@ -276,8 +276,8 @@ internal
 external
   interfaces: ens32
 
-# sysctl -w net.ipv4.ip_forward=1 # ¸®´ª½º ½Ã½ºÅÛÀ» ¶ó¿ìÅÍ·Î ¸¸µå´Â ¼ÂÆÃ
-# sysctl -p # ¼³Á¤ ÀúÀå
+# sysctl -w net.ipv4.ip_forward=1 # ë¦¬ëˆ…ìŠ¤ ì‹œìŠ¤í…œì„ ë¼ìš°í„°ë¡œ ë§Œë“œëŠ” ì…‹íŒ…
+# sysctl -p # ì„¤ì • ì €ìž¥
 # cat /proc/sys/net/ipv4/ip_forward
 1
 
@@ -285,7 +285,7 @@ external
 # firewall-cmd --reload
 
 2. DHCP
-µ¿Àû È£½ºÆ® ±¸¼º ÇÁ·ÎÅäÄÝ(Dynamic Host Configuration Protocol, DHCP)Àº È£½ºÆ® IP ±¸¼º °ü¸®¸¦ ´Ü¼øÈ­ÇÏ´Â IP Ç¥ÁØÀÔ´Ï´Ù. µ¿Àû È£½ºÆ® ±¸¼º ÇÁ·ÎÅäÄÝ Ç¥ÁØ¿¡¼­´Â DHCP ¼­¹ö¸¦ »ç¿ëÇÏ¿© IP ÁÖ¼Ò ¹× °ü·ÃµÈ ±âÅ¸ ±¸¼º ¼¼ºÎ Á¤º¸¸¦ ³×Æ®¿öÅ©ÀÇ DHCP »ç¿ë Å¬¶óÀÌ¾ðÆ®¿¡°Ô µ¿ÀûÀ¸·Î ÇÒ´çÇÏ´Â ¹æ¹ýÀ» Á¦°øÇÕ´Ï´Ù.
+ë™ì  í˜¸ìŠ¤íŠ¸ êµ¬ì„± í”„ë¡œí† ì½œ(Dynamic Host Configuration Protocol, DHCP)ì€ í˜¸ìŠ¤íŠ¸ IP êµ¬ì„± ê´€ë¦¬ë¥¼ ë‹¨ìˆœí™”í•˜ëŠ” IP í‘œì¤€ìž…ë‹ˆë‹¤. ë™ì  í˜¸ìŠ¤íŠ¸ êµ¬ì„± í”„ë¡œí† ì½œ í‘œì¤€ì—ì„œëŠ” DHCP ì„œë²„ë¥¼ ì‚¬ìš©í•˜ì—¬ IP ì£¼ì†Œ ë° ê´€ë ¨ëœ ê¸°íƒ€ êµ¬ì„± ì„¸ë¶€ ì •ë³´ë¥¼ ë„¤íŠ¸ì›Œí¬ì˜ DHCP ì‚¬ìš© í´ë¼ì´ì–¸íŠ¸ì—ê²Œ ë™ì ìœ¼ë¡œ í• ë‹¹í•˜ëŠ” ë°©ë²•ì„ ì œê³µí•©ë‹ˆë‹¤.
 # yum install dhcp -y
 # vi /etc/dhcp/dhcpd.conf
 ddns-update-style interim;
@@ -320,7 +320,7 @@ ssh -p 221 -i my-key.pem root@192.168.0.85
 ssh -p 222 -i my-key.pem root@192.168.0.85
 ssh -p 223 -i my-key.pem root@192.168.0.85
 
-@@ Æ÷Æ®Æ÷¿öµù
+@@ í¬íŠ¸í¬ì›Œë”©
 # firewall-cmd --permanent --zone=external --add-forward-port=port=221:proto=tcp:toport=22:toaddr=10.0.21.100
 # firewall-cmd --permanent --zone=external --add-forward-port=port=222:proto=tcp:toport=22:toaddr=10.0.21.102
 # firewall-cmd --permanent --zone=external --add-forward-port=port=223:proto=tcp:toport=22:toaddr=10.0.21.101
@@ -329,7 +329,7 @@ ssh -p 223 -i my-key.pem root@192.168.0.85
 # firewall-cmd --list-all --zone=external
 
 3. DNS - AWS Route53
-µµ¸ÞÀÎ ³×ÀÓ ½Ã½ºÅÛ(Domain Name System, DNS)Àº È£½ºÆ®ÀÇ µµ¸ÞÀÎ ÀÌ¸§À» È£½ºÆ®ÀÇ ³×Æ®¿öÅ© ÁÖ¼Ò·Î ¹Ù²Ù°Å³ª ±× ¹Ý´ëÀÇ º¯È¯À» ¼öÇàÇÒ ¼ö ÀÖµµ·Ï ÇÏ±â À§ÇØ °³¹ßµÇ¾ú½À´Ï´Ù. Æ¯Á¤ ÄÄÇ»ÅÍ(¶Ç´Â ³×Æ®¿öÅ©·Î ¿¬°áµÈ ÀÓÀÇÀÇ ÀåÄ¡)ÀÇ ÁÖ¼Ò¸¦ Ã£±â À§ÇØ, »ç¶÷ÀÌ ÀÌÇØÇÏ±â ½¬¿î µµ¸ÞÀÎ ÀÌ¸§À» ¼ýÀÚ·Î µÈ ½Äº° ¹øÈ£(IP ÁÖ¼Ò)·Î º¯È¯ÇØ ÁÝ´Ï´Ù. µµ¸ÞÀÎ ³×ÀÓ ½Ã½ºÅÛÀº ÈçÈ÷ "ÀüÈ­¹øÈ£ºÎ"¿¡ ºñÀ¯µË´Ï´Ù. ÀÎÅÍ³Ý µµ¸ÞÀÎ ÁÖ¼Ò Ã¼°è·Î¼­ TCP/IPÀÇ ÀÀ¿ë¿¡¼­, www.example.com°ú °°Àº ÁÖ ÄÄÇ»ÅÍÀÇ µµ¸ÞÀÎ ÀÌ¸§À» 192.168.1.0°ú °°Àº IP ÁÖ¼Ò·Î º¯È¯ÇÏ°í ¶ó¿ìÆÃ Á¤º¸¸¦ Á¦°øÇÏ´Â ºÐ»êÇü µ¥ÀÌÅÍº£ÀÌ½º ½Ã½ºÅÛÀÔ´Ï´Ù.
+ë„ë©”ì¸ ë„¤ìž„ ì‹œìŠ¤í…œ(Domain Name System, DNS)ì€ í˜¸ìŠ¤íŠ¸ì˜ ë„ë©”ì¸ ì´ë¦„ì„ í˜¸ìŠ¤íŠ¸ì˜ ë„¤íŠ¸ì›Œí¬ ì£¼ì†Œë¡œ ë°”ê¾¸ê±°ë‚˜ ê·¸ ë°˜ëŒ€ì˜ ë³€í™˜ì„ ìˆ˜í–‰í•  ìˆ˜ ìžˆë„ë¡ í•˜ê¸° ìœ„í•´ ê°œë°œë˜ì—ˆìŠµë‹ˆë‹¤. íŠ¹ì • ì»´í“¨í„°(ë˜ëŠ” ë„¤íŠ¸ì›Œí¬ë¡œ ì—°ê²°ëœ ìž„ì˜ì˜ ìž¥ì¹˜)ì˜ ì£¼ì†Œë¥¼ ì°¾ê¸° ìœ„í•´, ì‚¬ëžŒì´ ì´í•´í•˜ê¸° ì‰¬ìš´ ë„ë©”ì¸ ì´ë¦„ì„ ìˆ«ìžë¡œ ëœ ì‹ë³„ ë²ˆí˜¸(IP ì£¼ì†Œ)ë¡œ ë³€í™˜í•´ ì¤ë‹ˆë‹¤. ë„ë©”ì¸ ë„¤ìž„ ì‹œìŠ¤í…œì€ í”ížˆ "ì „í™”ë²ˆí˜¸ë¶€"ì— ë¹„ìœ ë©ë‹ˆë‹¤. ì¸í„°ë„· ë„ë©”ì¸ ì£¼ì†Œ ì²´ê³„ë¡œì„œ TCP/IPì˜ ì‘ìš©ì—ì„œ, www.example.comê³¼ ê°™ì€ ì£¼ ì»´í“¨í„°ì˜ ë„ë©”ì¸ ì´ë¦„ì„ 192.168.1.0ê³¼ ê°™ì€ IP ì£¼ì†Œë¡œ ë³€í™˜í•˜ê³  ë¼ìš°íŒ… ì •ë³´ë¥¼ ì œê³µí•˜ëŠ” ë¶„ì‚°í˜• ë°ì´í„°ë² ì´ìŠ¤ ì‹œìŠ¤í…œìž…ë‹ˆë‹¤.
 
 ISP(Internet Service Provider: KT, SKB, LGU+, Dreamline ...) 
 DNS
@@ -376,7 +376,7 @@ view "internal" {
         };
 
         include "/etc/named.rfc1912.zones";
-        include "/var/named/clown18.shop.zones"; # È£½ºÆÃ ¿µ¿ª »ý¼º
+        include "/var/named/clown18.shop.zones"; # í˜¸ìŠ¤íŒ… ì˜ì—­ ìƒì„±
 };
 
 # vi /var/named/clown18.shop.zones
@@ -439,27 +439,27 @@ PEERDNS=no
 
 # systemctl restart NetworkManager
 
-* ´ëÇ¥ÀûÀÎ ·¹ÄÚµå
-SOA  : ´Ù·ç´Â µµ¸ÞÀÎ ¹öÀü°ú ¾÷µ¥ÀÌÆ® ½Ã°£ °£°Ý µîÀÇ Á¤º¸¸¦ ÀúÀåÇÏ´Â ·¹ÄÚµå
-A    : È£½ºÆ® ÀÌ¸§À¸·Î IPv4 ÁÖ¼Ò¸¦ Á¶È¸ÇÒ ¶§ »ç¿ëÇÏ´Â ·¹ÄÚµå
-       ¿¹: È£½ºÆ® ns.clown18.shopÀÇ IPv4 ÁÖ¼Ò´Â 172.31.0.130
-AAAA : È£½ºÆ® ÀÌ¸§À¸·Î IPv6 ÁÖ¼Ò¸¦ Á¶È¸ÇÒ ¶§ »ç¿ëÇÏ´Â ·¹ÄÚµå
-       ¿¹: jprs.jpÀÇ IPv6 ÁÖ¼Ò´Â 2001:218:3001:7::80
-PTR  : IP ÁÖ¼Ò·Î È£½ºÆ® ÀÌ¸§À» Á¶È¸ÇÒ ¶§ »ç¿ëÇÏ´Â ·¹ÄÚµå
-       ¿¹: 172.31.0.130ÀÇ È£½ºÆ® ÀÌ¸§Àº ns.clown18.shop
-NS   : DNS ¼­¹öÀÇ È£½ºÆ® ÀÌ¸§ È¤Àº IP ÁÖ¼Ò¸¦ ÀúÀåÇÏ´Â ·¹ÄÚµå
-       ¿¹: clown18.shopÀÇ DNS ¼­¹ö´Â ns.clown18.shop
-MX   : ¸ÞÀÏ ¼­¹ö È£½ºÆ® ÀÌ¸§ È¤Àº IP ÁÖ¼Ò¸¦ ÀúÀåÇÏ´Â ·¹ÄÚµå
-       ¿¹: clown18.shopÀÇ ¸ÞÀÏ ¼­¹ö´Â mail.clown18.shop
-CNAME: È£½ºÆ® ÀÌ¸§ÀÇ º°ÄªÀ» ÀúÀåÇÏ´Â ·¹ÄÚµå
-       ¿¹: www.clown18.shopÀº ns.clown18.shopÀÇ º°Äª(alias)     
+* ëŒ€í‘œì ì¸ ë ˆì½”ë“œ
+SOA  : ë‹¤ë£¨ëŠ” ë„ë©”ì¸ ë²„ì „ê³¼ ì—…ë°ì´íŠ¸ ì‹œê°„ ê°„ê²© ë“±ì˜ ì •ë³´ë¥¼ ì €ìž¥í•˜ëŠ” ë ˆì½”ë“œ
+A    : í˜¸ìŠ¤íŠ¸ ì´ë¦„ìœ¼ë¡œ IPv4 ì£¼ì†Œë¥¼ ì¡°íšŒí•  ë•Œ ì‚¬ìš©í•˜ëŠ” ë ˆì½”ë“œ
+       ì˜ˆ: í˜¸ìŠ¤íŠ¸ ns.clown18.shopì˜ IPv4 ì£¼ì†ŒëŠ” 172.31.0.130
+AAAA : í˜¸ìŠ¤íŠ¸ ì´ë¦„ìœ¼ë¡œ IPv6 ì£¼ì†Œë¥¼ ì¡°íšŒí•  ë•Œ ì‚¬ìš©í•˜ëŠ” ë ˆì½”ë“œ
+       ì˜ˆ: jprs.jpì˜ IPv6 ì£¼ì†ŒëŠ” 2001:218:3001:7::80
+PTR  : IP ì£¼ì†Œë¡œ í˜¸ìŠ¤íŠ¸ ì´ë¦„ì„ ì¡°íšŒí•  ë•Œ ì‚¬ìš©í•˜ëŠ” ë ˆì½”ë“œ
+       ì˜ˆ: 172.31.0.130ì˜ í˜¸ìŠ¤íŠ¸ ì´ë¦„ì€ ns.clown18.shop
+NS   : DNS ì„œë²„ì˜ í˜¸ìŠ¤íŠ¸ ì´ë¦„ í˜¹ì€ IP ì£¼ì†Œë¥¼ ì €ìž¥í•˜ëŠ” ë ˆì½”ë“œ
+       ì˜ˆ: clown18.shopì˜ DNS ì„œë²„ëŠ” ns.clown18.shop
+MX   : ë©”ì¼ ì„œë²„ í˜¸ìŠ¤íŠ¸ ì´ë¦„ í˜¹ì€ IP ì£¼ì†Œë¥¼ ì €ìž¥í•˜ëŠ” ë ˆì½”ë“œ
+       ì˜ˆ: clown18.shopì˜ ë©”ì¼ ì„œë²„ëŠ” mail.clown18.shop
+CNAME: í˜¸ìŠ¤íŠ¸ ì´ë¦„ì˜ ë³„ì¹­ì„ ì €ìž¥í•˜ëŠ” ë ˆì½”ë“œ
+       ì˜ˆ: www.clown18.shopì€ ns.clown18.shopì˜ ë³„ì¹­(alias)     
 
 yum install -y bind-utils
 dig A web01.clown18.shop
 dig -x 172.31.0.102
 
-4. HAproxy - AWS ELB - ALB - ·Îµå¹ë·±¼­ - ºÎÇÏºÐ»ê
-HAProxy´Â ¿©·¯ ¼­¹ö¿¡ ¿äÃ»À» ºÐ»ê½ÃÅ°´Â TCP ¹× HTTP ±â¹Ý ¾ÖÇÃ¸®ÄÉÀÌ¼ÇÀ» À§ÇÑ °í°¡¿ë¼º ·Îµå ¹ë·±¼­ ¹× ¿ª¹æÇâ ÇÁ·Ï½Ã¸¦ Á¦°øÇÏ´Â ¹«·á ¿ÀÇÂ ¼Ò½º ¼ÒÇÁÆ®¿þ¾î ÀÔ´Ï´Ù. C·Î ÀÛ¼ºµÇ¾úÀ¸¸ç ºü¸£°í È¿À²Àû(ÇÁ·Î¼¼¼­ ¹× ¸Þ¸ð¸® »ç¿ë Ãø¸é¿¡¼­)À¸·Î À¯¸íÇÕ´Ï´Ù.
+4. HAproxy - AWS ELB - ALB - ë¡œë“œë°¸ëŸ°ì„œ - ë¶€í•˜ë¶„ì‚°
+HAProxyëŠ” ì—¬ëŸ¬ ì„œë²„ì— ìš”ì²­ì„ ë¶„ì‚°ì‹œí‚¤ëŠ” TCP ë° HTTP ê¸°ë°˜ ì• í”Œë¦¬ì¼€ì´ì…˜ì„ ìœ„í•œ ê³ ê°€ìš©ì„± ë¡œë“œ ë°¸ëŸ°ì„œ ë° ì—­ë°©í–¥ í”„ë¡ì‹œë¥¼ ì œê³µí•˜ëŠ” ë¬´ë£Œ ì˜¤í”ˆ ì†ŒìŠ¤ ì†Œí”„íŠ¸ì›¨ì–´ ìž…ë‹ˆë‹¤. Cë¡œ ìž‘ì„±ë˜ì—ˆìœ¼ë©° ë¹ ë¥´ê³  íš¨ìœ¨ì (í”„ë¡œì„¸ì„œ ë° ë©”ëª¨ë¦¬ ì‚¬ìš© ì¸¡ë©´ì—ì„œ)ìœ¼ë¡œ ìœ ëª…í•©ë‹ˆë‹¤.
 # yum install -y haproxy
 # vi /etc/haproxy/haproxy.cfg
 
