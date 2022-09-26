@@ -1,0 +1,34 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: bmoingress
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internal
+    alb.ingress.kubernetes.io/target-type: ip
+
+spec:
+  rules:
+    - http:
+        paths:
+          - pathType: Prefix
+            path: /login/
+            backend:
+              service:
+                name: login-service-nodeport
+                port:
+                  number: 80
+          - pathType: Prefix
+            path: /id_validate/
+            backend:
+              service:
+                name: id-validate-service-nodeport
+                port:
+                  number: 80
+          - pathType: Prefix
+            path: /
+            backend:
+              service:
+                name: login-service-nodeport
+                port:
+                  number: 80

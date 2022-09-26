@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: signup-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: signup-deployment
+  template:
+    metadata:
+      name: signup-deployment
+      labels:
+        app: signup-deployment
+    spec:
+      containers:
+      - name: signup-deployment-container
+        image: clownpark/signup_api:v8
+        ports:
+          - containerPort: 80

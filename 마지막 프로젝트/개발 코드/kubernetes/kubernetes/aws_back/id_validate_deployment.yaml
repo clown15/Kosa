@@ -1,0 +1,18 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: id-validate-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: id-validate-deployment
+  template:
+    metadata:
+      name: id-validate-deployment
+      labels:
+        app: id-validate-deployment
+    spec:
+      containers:
+      - name: id-validate-deployment-container
+        image: library/id_validate_api:v15

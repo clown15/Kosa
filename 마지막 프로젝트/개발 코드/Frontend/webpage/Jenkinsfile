@@ -1,0 +1,33 @@
+node {
+    stage('========== Clone repository ==========') {
+        checkout scm
+    }
+
+    stage('========== Build image ==========') {
+        app = docker.build("library/webpage")
+    }
+
+    stage('========== Push image ==========') {
+        docker.withRegistry('http://192.168.0.134:8080','Harbor') {
+            app.push("v${currentBuild.number}")
+            app.push("latest")
+        }
+        sh "docker image prune -af"
+    }
+    stage('========= Git Push ===========') {
+        git credentialsId: 'gitlab',
+            url: 'http://192.168.4.255/clown/kubernetes.git',
+            branch: 'main'
+
+        sh "sed -i 's/webpage:.*\$/webpage:v${currentBuild.number}/g' aws_front/webpage_deployment.yaml"
+        sh "git add aws_front/webpage_deployment.yaml"
+        sh "git config --global user.email 'kosa@gmail.com'"
+        sh "git config --global user.name 'clown'"
+        sh "git config --global push.default current"
+        sh "git commit -m '[UPDATE] webpage ${currentBuild.number} image versioning'"
+
+        withCredentials([usernamePassword(credentialsId: 'gitlab', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]){
+            sh('git push -uf http://${GIT_USERNAME}:${GIT_PASSWORD}@192.168.4.255/clown/kubernetes.git')
+        }
+    }
+} 

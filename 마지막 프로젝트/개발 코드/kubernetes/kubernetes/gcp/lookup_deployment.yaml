@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lookup-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: lookup-deployment
+  template:
+    metadata:
+      name: lookup-deployment
+      labels:
+        app: lookup-deployment
+    spec:
+      containers:
+      - name: lookup-deployment-container
+        image: clownpark/lookup_api:v11
+        ports:
+          - containerPort: 80
