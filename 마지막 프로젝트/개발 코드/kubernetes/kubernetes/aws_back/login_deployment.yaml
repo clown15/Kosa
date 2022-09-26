@@ -1,0 +1,18 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: login-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: login-deployment
+  template:
+    metadata:
+      name: login-deployment
+      labels:
+        app: login-deployment
+    spec:
+      containers:
+      - name: login-deployment-container
+        image: library/login_api:v14
